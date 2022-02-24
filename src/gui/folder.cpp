@@ -29,11 +29,13 @@
 #include "filesystem.h"
 #include "folder.h"
 #include "folderman.h"
+#include "graphapi/drives.h"
 #include "localdiscoverytracker.h"
 #include "logger.h"
 #include "networkjobs.h"
 #include "settingsdialog.h"
 #include "socketapi/socketapi.h"
+#include "spaces/spacesbrowser.h"
 #include "syncengine.h"
 #include "syncresult.h"
 #include "syncrunfilelog.h"
@@ -169,6 +171,8 @@ Folder::Folder(const FolderDefinition &definition,
         // Initialize the vfs plugin
         startVfs();
     }
+
+    // auto *w = new SpacesBrowser(_accountState->account());
 }
 
 Folder::~Folder()

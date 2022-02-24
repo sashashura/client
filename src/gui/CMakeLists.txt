@@ -140,6 +140,10 @@ target_compile_definitions(owncloudCore
            QT_NO_FOREACH
 )
 
+
+add_subdirectory(spaces)
+
+
 add_subdirectory(socketapi)
 
 target_include_directories(owncloudCore PUBLIC

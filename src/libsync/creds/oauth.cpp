@@ -431,17 +431,16 @@ QByteArray OAuth::generateRandomString(size_t size) const
 QUrl OAuth::authorisationLink() const
 {
     Q_ASSERT(_server.isListening());
-    QUrlQuery query;
     const QByteArray code_challenge = QCryptographicHash::hash(_pkceCodeVerifier, QCryptographicHash::Sha256)
                                           .toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
-    query.setQueryItems({ { QStringLiteral("response_type"), QStringLiteral("code") },
+    QUrlQuery query { { QStringLiteral("response_type"), QStringLiteral("code") },
         { QStringLiteral("client_id"), _clientId },
         { QStringLiteral("redirect_uri"), QStringLiteral("%1:%2").arg(_redirectUrl, QString::number(_server.serverPort())) },
         { QStringLiteral("code_challenge"), QString::fromLatin1(code_challenge) },
         { QStringLiteral("code_challenge_method"), QStringLiteral("S256") },
         { QStringLiteral("scope"), Theme::instance()->openIdConnectScopes() },
         { QStringLiteral("prompt"), Theme::instance()->openIdConnectPrompt() },
-        { QStringLiteral("state"), QString::fromUtf8(_state) } });
+        { QStringLiteral("state"), QString::fromUtf8(_state) } };
 
     if (!_davUser.isEmpty()) {
         const QString davUser = QString::fromUtf8(QUrl::toPercentEncoding(_davUser)); // Issue #7762;
