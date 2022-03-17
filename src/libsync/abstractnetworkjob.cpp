@@ -69,6 +69,7 @@ AbstractNetworkJob::AbstractNetworkJob(AccountPtr account, const QUrl &baseUrl, 
 {
     // Since we hold a QSharedPointer to the account, this makes no sense. (issue #6893)
     OC_ASSERT(account != parent);
+    Q_ASSERT(baseUrl.isValid());
 }
 
 QUrl AbstractNetworkJob::baseUrl() const

@@ -338,7 +338,7 @@ Application::Application(int &argc, char **argv)
     // setup that follows, like folder setup
     _gui = new ownCloudGui(this);
     if (_showSettings) {
-        _gui->slotShowSettings();
+        QTimer::singleShot(0, _gui, &ownCloudGui::slotShowSettings);
     }
 
     FolderMan::instance()->setupFolders();
