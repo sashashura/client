@@ -67,9 +67,11 @@ private slots:
             });
 
         auto &modifier = deleteOnRemote ? fakeFolder.remoteModifier() : fakeFolder.localModifier();
-        const auto &children = fakeFolder.currentRemoteState().children;
-        for (auto it = children.cbegin(); it != children.cend(); ++it)
+        const auto children = fakeFolder.currentRemoteState().children; // make sure to take a copy, otherwise it's a use-after-free
+        for (auto it = children.cbegin(); it != children.cend(); ++it) {
             modifier.remove(it.key());
+        }
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
 
         QVERIFY(!fakeFolder.syncOnce()); // Should fail because we cancel the sync
         QCOMPARE(aboutToRemoveAllFilesCalled, 1);
@@ -108,9 +110,11 @@ private slots:
             });
 
         auto &modifier = deleteOnRemote ? fakeFolder.remoteModifier() : fakeFolder.localModifier();
-        const auto &children = fakeFolder.currentRemoteState().children;
-        for (auto it = children.cbegin(); it != children.cend(); ++it)
+        const auto children = fakeFolder.currentRemoteState().children; // make sure to take a copy, otherwise it's a use-after-free
+        for (auto it = children.cbegin(); it != children.cend(); ++it) {
             modifier.remove(it.key());
+        }
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
 
         QVERIFY(fakeFolder.syncOnce()); // Should succeed, and all files must then be deleted
 
@@ -172,11 +176,13 @@ private slots:
         fakeFolder.localModifier().mkdir("Q");
         fakeFolder.localModifier().insert("Q/q1");
         fakeFolder.localModifier().appendByte("B/b1");
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
         QVERIFY(fakeFolder.syncOnce());
         QCOMPARE(aboutToRemoveAllFilesCalled, 0);
 
         // Do some change localy
         fakeFolder.localModifier().appendByte("A/a1");
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
 
         // reset the server.
         fakeFolder.remoteModifier() = FileInfo::A12_B12_C12_S12();
@@ -198,7 +204,7 @@ private slots:
     {
         QFETCH(bool, hasInitialFingerPrint);
         FakeFolder fakeFolder{ FileInfo::A12_B12_C12_S12() };
-        fakeFolder.remoteModifier().setContents("C/c1", 'N');
+        fakeFolder.remoteModifier().setContents("C/c1", FileModifier::DefaultFileSize, 'N');
         fakeFolder.remoteModifier().setModTime("C/c1", QDateTime::currentDateTimeUtc().addDays(-2));
         fakeFolder.remoteModifier().remove("C/c2");
         if (hasInitialFingerPrint) {
@@ -234,12 +240,12 @@ private slots:
         /* Simulate a backup restoration */
 
         // A/a1 is an old file
-        fakeFolder.remoteModifier().setContents("A/a1", 'O');
+        fakeFolder.remoteModifier().setContents("A/a1", FileModifier::DefaultFileSize, 'O');
         fakeFolder.remoteModifier().setModTime("A/a1", QDateTime::currentDateTimeUtc().addDays(-2));
         // B/b1 did not exist at the time of the backup
         fakeFolder.remoteModifier().remove("B/b1");
         // B/b2 was uploaded by another user in the mean time.
-        fakeFolder.remoteModifier().setContents("B/b2", 'N');
+        fakeFolder.remoteModifier().setContents("B/b2", FileModifier::DefaultFileSize, 'N');
         fakeFolder.remoteModifier().setModTime("B/b2", QDateTime::currentDateTimeUtc().addDays(2));
 
         // C/c3 was removed since we made the backup
@@ -268,6 +274,7 @@ private slots:
         QVERIFY(conflict); // Just to be sure, we kept the old file in a conflict
         QCOMPARE(conflict->contentChar, 'W');
         fakeFolder.localModifier().remove(conflict->path());
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
 
         // We actually do not remove files that technically should have been removed (we don't want data-loss)
         QVERIFY(currentState.find("C/c3_removed"));

@@ -13,7 +13,6 @@
 
 #include <QtTest>
 
-using namespace std::chrono_literals;
 using namespace OCC;
 
 #ifdef Q_OS_WIN
@@ -41,6 +40,23 @@ class TestLockedFiles : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase_data()
+    {
+        QTest::addColumn<Vfs::Mode>("vfsMode");
+        QTest::addColumn<bool>("filesAreDehydrated");
+
+        QTest::newRow("Vfs::Off") << Vfs::Off << false;
+
+        if (isVfsPluginAvailable(Vfs::WindowsCfApi)) {
+            QTest::newRow("Vfs::WindowsCfApi dehydrated") << Vfs::WindowsCfApi << true;
+
+            // TODO: the hydrated version will fail due to an issue in the winvfs plugin, so leave it disabled for now.
+            // QTest::newRow("Vfs::WindowsCfApi hydrated") << Vfs::WindowsCfApi << false;
+        } else if (Utility::isWindows()) {
+            QWARN("Skipping Vfs::WindowsCfApi");
+        }
+    }
+
     void testBasicLockFileWatcher()
     {
         auto tmp = TestUtils::createTempDir();
@@ -69,7 +85,7 @@ private slots:
         QVERIFY(watcher.contains(tmpFile));
 
         QEventLoop loop;
-        QTimer::singleShot(120ms, &loop, [&] { loop.exit(); });
+        QTimer::singleShot(120, &loop, [&] { loop.exit(); });
         loop.exec();
 
         QCOMPARE(count, 1);
@@ -106,7 +122,17 @@ private slots:
 #ifdef Q_OS_WIN
     void testLockedFilePropagation()
     {
-        FakeFolder fakeFolder{ FileInfo::A12_B12_C12_S12() };
+        QFETCH_GLOBAL(Vfs::Mode, vfsMode);
+        QFETCH_GLOBAL(bool, filesAreDehydrated);
+
+        FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
+
+        // This test can only work when the file is locally available...
+        if (filesAreDehydrated) {
+            // ... so force hydration in case of dehydrated vfs
+            fakeFolder.localModifier().appendByte("A/a1");
+            QVERIFY(fakeFolder.applyLocalModificationsAndSync());
+        }
 
         QStringList seenLockedFiles;
         connect(&fakeFolder.syncEngine(), &SyncEngine::seenLockedFile, &fakeFolder.syncEngine(),
@@ -124,12 +150,13 @@ private slots:
         // Local change, attempted upload, but file is locked!
         //
         fakeFolder.localModifier().appendByte("A/a1");
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
         tracker.addTouchedPath("A/a1");
         auto h1 = makeHandle(fakeFolder.localPath() + "A/a1", 0);
 
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
-        QVERIFY(!fakeFolder.syncOnce());
+        QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
         QVERIFY(seenLockedFiles.contains(fakeFolder.localPath() + "A/a1"));
         QVERIFY(seenLockedFiles.size() == 1);
@@ -140,7 +167,7 @@ private slots:
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
         fakeFolder.syncJournal().wipeErrorBlacklist();
-        QVERIFY(fakeFolder.syncOnce());
+        QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
 
         seenLockedFiles.clear();
@@ -150,11 +177,12 @@ private slots:
         // Remote change, attempted download, but file is locked!
         //
         fakeFolder.remoteModifier().appendByte("A/a1");
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
         auto h2 = makeHandle(fakeFolder.localPath() + "A/a1", 0);
 
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
-        QVERIFY(!fakeFolder.syncOnce());
+        QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
         QVERIFY(seenLockedFiles.contains(fakeFolder.localPath() + "A/a1"));
         QVERIFY(seenLockedFiles.size() == 1);
@@ -164,7 +192,7 @@ private slots:
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
         fakeFolder.syncJournal().wipeErrorBlacklist();
-        QVERIFY(fakeFolder.syncOnce());
+        QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
     }
 #endif

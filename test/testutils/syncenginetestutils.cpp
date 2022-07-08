@@ -41,76 +41,128 @@ PathComponents PathComponents::subComponents() const &
 
 void DiskFileModifier::remove(const QString &relativePath)
 {
-    QFileInfo fi { _rootDir.filePath(relativePath) };
-    if (fi.isFile())
-        QVERIFY(_rootDir.remove(relativePath));
-    else
-        QVERIFY(QDir { fi.filePath() }.removeRecursively());
+    _processArguments.append({ "remove", relativePath });
 }
 
-void DiskFileModifier::insert(const QString &relativePath, qint64 size, char contentChar)
+void DiskFileModifier::insert(const QString &relativePath, quint64 size, char contentChar)
 {
-    QFile file { _rootDir.filePath(relativePath) };
-    QVERIFY(!file.exists());
-    file.open(QFile::WriteOnly);
-    QByteArray buf(1024, contentChar);
-    for (int x = 0; x < size / buf.size(); ++x) {
-        file.write(buf);
-    }
-    file.write(buf.data(), size % buf.size());
-    file.close();
-    // Set the mtime 30 seconds in the past, for some tests that need to make sure that the mtime differs.
-    OCC::FileSystem::setModTime(file.fileName(), OCC::Utility::qDateTimeToTime_t(QDateTime::currentDateTimeUtc().addSecs(-30)));
-    QCOMPARE(file.size(), size);
+    _processArguments.append({ "insert", relativePath, QString::number(size), QChar::fromLatin1(contentChar) });
+    // TODO: EV: Is the following true?
+    //    // Set the mtime 30 seconds in the past, for some tests that need to make sure that the mtime differs.
+    //    setModTime(relativePath, QDateTime::currentDateTimeUtc().addSecs(-30));
 }
 
-void DiskFileModifier::setContents(const QString &relativePath, char contentChar)
+void DiskFileModifier::setContents(const QString &relativePath, quint64 newSize, char contentChar)
 {
-    QFile file { _rootDir.filePath(relativePath) };
-    QVERIFY(file.exists());
-    qint64 size = file.size();
-    file.open(QFile::WriteOnly);
-    file.write(QByteArray {}.fill(contentChar, size));
+    _processArguments.append({ "contents", relativePath, QString::number(newSize), QChar::fromLatin1(contentChar) });
 }
 
 void DiskFileModifier::appendByte(const QString &relativePath, char contentChar)
 {
-    QFile file { _rootDir.filePath(relativePath) };
-    QVERIFY(file.exists());
-    file.open(QFile::ReadWrite);
-    QByteArray contents;
-    if (contentChar)
-        contents += contentChar;
-    else
-        contents = file.read(1);
-    file.seek(file.size());
-    file.write(contents);
-}
-
-void DiskFileModifier::modifyByte(const QString &relativePath, quint64 offset, char contentChar)
-{
-    QFile file { _rootDir.filePath(relativePath) };
-    QVERIFY(file.exists());
-    file.open(QFile::ReadWrite);
-    file.seek(offset);
-    file.write(&contentChar, 1);
-    file.close();
+    _processArguments.append({ "appendbyte", relativePath, QChar::fromLatin1(contentChar) });
 }
 
 void DiskFileModifier::mkdir(const QString &relativePath)
 {
-    _rootDir.mkpath(relativePath);
+    _processArguments.append({ "mkdir", relativePath });
 }
 
 void DiskFileModifier::rename(const QString &from, const QString &to)
 {
-    QVERIFY(_rootDir.exists(from));
-    QVERIFY(_rootDir.rename(from, to));
+    _processArguments.append({ "rename", from, to });
 }
 
 void DiskFileModifier::setModTime(const QString &relativePath, const QDateTime &modTime)
 {
-    OCC::FileSystem::setModTime(_rootDir.filePath(relativePath), OCC::Utility::qDateTimeToTime_t(modTime));
+    _processArguments.append({ "mtime", relativePath, QString::number(modTime.toSecsSinceEpoch()) });
+}
+
+void DiskFileModifier::incModTime(const QString &relativePath, int secondsToAdd)
+{
+    time_t mtime = OCC::FileSystem::getModTime(_rootDir.filePath(relativePath));
+    auto newMTime = OCC::Utility::qDateTimeFromTime_t(mtime).addSecs(secondsToAdd);
+    setModTime(relativePath, newMTime);
+}
+
+class HelperProcess : public QProcess
+{
+public:
+    HelperProcess(const QDir &rootDir, QStringList processArguments) // copy is on purpose
+    {
+        if (processArguments.isEmpty()) { // fast-path:
+            finished = true;
+            succeeded = true;
+            return;
+        }
+
+        setProcessChannelMode(QProcess::MergedChannels);
+        processArguments.prepend(rootDir.absolutePath());
+        QObject::connect(this, &QProcess::readyRead, [this]() {
+            while (canReadLine()) {
+                qDebug() << "helper output:" << readLine();
+            }
+        });
+        QObject::connect(this, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            [this](int exitCode, QProcess::ExitStatus exitStatus) {
+                qDebug() << "helper finished:" << exitCode << exitStatus;
+                this->finished = true;
+                this->succeeded = exitStatus == QProcess::NormalExit && exitCode == 0;
+            });
+
+        qDebug() << "Starting helper:" << TEST_HELPER_EXE << processArguments;
+        start(TEST_HELPER_EXE, processArguments);
+    }
+
+public:
+    bool finished = false;
+    bool succeeded = true;
+};
+
+bool DiskFileModifier::applyModifications()
+{
+    if (_processArguments.isEmpty()) {
+        return true;
+    }
+
+    HelperProcess helper(_rootDir, _processArguments);
+    helper.waitForStarted();
+    _processArguments.clear(); // the helper has a copy, we clean it now for the next run
+    do {
+        QThread::msleep(50);
+        QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+    } while (!helper.finished);
+    return helper.succeeded;
+}
+
+bool DiskFileModifier::applyModificationsAndSync(FakeFolder &ff, OCC::Vfs::Mode mode)
+{
+    if (mode == OCC::Vfs::Off || mode == OCC::Vfs::WithSuffix) { // Classic mode:
+        if (!applyModifications()) {
+            return false;
+        }
+        return ff.syncOnce();
+    }
+
+    // Non-classic mode:
+
+    HelperProcess p(_rootDir, _processArguments);
+    _processArguments.clear();
+
+    do {
+        // process any pending events
+        QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+        // wait a bit to get the helper started with it's work
+        QThread::msleep(50);
+        // process any output from the helper
+        QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+        // now we might need to sync
+        if (!ff.syncOnce()) {
+            return false;
+        }
+        QThread::currentThread()->eventDispatcher()->processEvents(QEventLoop::AllEvents);
+    } while (!p.finished);
+
+    return p.succeeded;
 }
 
 FileInfo FileInfo::A12_B12_C12_S12()
@@ -152,36 +204,31 @@ void FileInfo::remove(const QString &relativePath)
         [&pathComponents](const FileInfo &fi) { return fi.name == pathComponents.fileName(); }));
 }
 
-void FileInfo::insert(const QString &relativePath, qint64 size, char contentChar)
+void FileInfo::insert(const QString &relativePath, quint64 size, char contentChar)
 {
     create(relativePath, size, contentChar);
 }
 
-void FileInfo::setContents(const QString &relativePath, char contentChar)
+void FileInfo::setContents(const QString &relativePath, quint64 newSize, char contentChar)
 {
     FileInfo *file = findInvalidatingEtags(relativePath);
     Q_ASSERT(file);
     file->contentChar = contentChar;
+    file->contentSize = newSize;
+    if (!file->isDehydratedPlaceholder) {
+        file->fileSize = newSize;
+    }
 }
 
 void FileInfo::appendByte(const QString &relativePath, char contentChar)
 {
-    Q_UNUSED(contentChar);
+    Q_UNUSED(contentChar)
     FileInfo *file = findInvalidatingEtags(relativePath);
     Q_ASSERT(file);
     if (!file->isDehydratedPlaceholder) {
         file->contentSize += 1;
     }
     file->fileSize += 1;
-}
-
-void FileInfo::modifyByte(const QString &relativePath, quint64 offset, char contentChar)
-{
-    Q_UNUSED(offset);
-    Q_UNUSED(contentChar);
-    FileInfo *file = findInvalidatingEtags(relativePath);
-    Q_ASSERT(file);
-    Q_ASSERT(!"unimplemented");
 }
 
 void FileInfo::mkdir(const QString &relativePath)
@@ -210,6 +257,14 @@ void FileInfo::setModTime(const QString &relativePath, const QDateTime &modTime)
     FileInfo *file = findInvalidatingEtags(relativePath);
     Q_ASSERT(file);
     file->setLastModified(modTime);
+}
+
+void FileInfo::incModTime(const QString &relativePath, int secondsToAdd)
+{
+    FileInfo *file = findInvalidatingEtags(relativePath);
+    Q_ASSERT(file);
+    auto newMTime = file->lastModified().addSecs(secondsToAdd);
+    file->setLastModified(newMTime);
 }
 
 FileInfo *FileInfo::find(PathComponents pathComponents, const bool invalidateEtags)
@@ -244,7 +299,7 @@ FileInfo *FileInfo::createDir(const QString &relativePath)
     return &child;
 }
 
-FileInfo *FileInfo::create(const QString &relativePath, qint64 size, char contentChar)
+FileInfo *FileInfo::create(const QString &relativePath, quint64 size, char contentChar)
 {
     const PathComponents pathComponents { relativePath };
     FileInfo *parent = findInvalidatingEtags(pathComponents.parentDirComponents());
@@ -261,35 +316,42 @@ bool FileInfo::equals(const FileInfo &other, CompareWhat compareWhat) const
     // Only check the content and contentSize if both files are hydrated:
     if (!isDehydratedPlaceholder && !other.isDehydratedPlaceholder) {
         if (contentSize != other.contentSize || contentChar != other.contentChar) {
+            qDebug() << "1" << name << "!=" << other.name;
             return false;
         }
     }
 
     // We need to check this before we use isDir in the next if-statement:
     if (isDir != other.isDir) {
+        qDebug() << "2" << name << "!=" << other.name;
         return false;
     }
 
     if (compareWhat == CompareLastModified) {
         // Don't check directory mtime: it might change when (unsynced) files get created.
         if (!isDir && _lastModifiedInSecondsUTC != other._lastModifiedInSecondsUTC) {
+            qDebug() << "3" << name << "!=" << other.name;
             return false;
         }
     }
 
     if (name != other.name || fileSize != other.fileSize) {
+        qDebug() << "4" << name << "!=" << other.name;
         return false;
     }
 
     if (children.size() != other.children.size()) {
+        qDebug() << "5" << name << "!=" << other.name;
         return false;
     }
 
     for (auto it = children.constBegin(), eit = children.constEnd(); it != eit; ++it) {
         auto oit = other.children.constFind(it.key());
         if (oit == other.children.constEnd()) {
+            qDebug() << "6" << name << "!=" << other.name;
             return false;
         } else if (!it.value().equals(oit.value(), compareWhat)) {
+            qDebug() << "7" << name << "!=" << other.name;
             return false;
         }
     }
@@ -941,16 +1003,15 @@ QNetworkReply *FakeAM::createRequest(QNetworkAccessManager::Operation op, const 
     return reply;
 }
 
-FakeFolder::FakeFolder(const FileInfo &fileTemplate, OCC::Vfs::Mode vfsMode)
+FakeFolder::FakeFolder(const FileInfo &fileTemplate, OCC::Vfs::Mode vfsMode, bool filesAreDehydrated)
     : _localModifier(_tempDir.path())
-    , _vfsMode(vfsMode)
 {
     // Needs to be done once
     OCC::SyncEngine::minimumFileAgeForUpload = std::chrono::milliseconds(0);
 
     QDir rootDir { _tempDir.path() };
     qDebug() << "FakeFolder operating on" << rootDir;
-    toDisk(rootDir, fileTemplate);
+    toDisk(rootDir, filesAreDehydrated ? FileInfo() : fileTemplate);
 
     _fakeAm = new FakeAM(fileTemplate);
     _account = OCC::TestUtils::createDummyAccount();
@@ -960,7 +1021,8 @@ FakeFolder::FakeFolder(const FileInfo &fileTemplate, OCC::Vfs::Mode vfsMode)
     // TODO: davUrl
 
     _syncEngine.reset(new OCC::SyncEngine(_account, _account->davUrl(), localPath(), QString(), _journalDb.get()));
-    _syncEngine->setSyncOptions(OCC::SyncOptions { QSharedPointer<OCC::Vfs>(OCC::createVfsFromPlugin(_vfsMode).release()) });
+    _syncEngine->setSyncOptions(OCC::SyncOptions { QSharedPointer<OCC::Vfs>(OCC::createVfsFromPlugin(vfsMode).release()) });
+
     // Ignore temporary files from the download. (This is in the default exclude list, but we don't load it)
     _syncEngine->excludedFiles().addManualExclude(QStringLiteral("]*.~*"));
 
@@ -970,17 +1032,30 @@ FakeFolder::FakeFolder(const FileInfo &fileTemplate, OCC::Vfs::Mode vfsMode)
             callback(false);
         });
     });
-    startVfs();
+
+    auto vfs = _syncEngine->syncOptions()._vfs;
+    if (vfsMode != vfs->mode()) {
+        vfs.reset(createVfsFromPlugin(vfsMode).release());
+        Q_ASSERT(vfs);
+    }
+
+    // Ensure we have a valid Vfs instance "running"
+    switchToVfs(vfs);
+
+    if (vfsMode != OCC::Vfs::Off) {
+        const auto pinState = filesAreDehydrated ? OCC::PinState::OnlineOnly : OCC::PinState::AlwaysLocal;
+        syncJournal().internalPinStates().setForPath("", pinState);
+        OC_ENFORCE(vfs->setPinState("", pinState));
+    }
 
     // A new folder will update the local file state database on first sync.
     // To have a state matching what users will encounter, we have to a sync
     // using an identical local/remote file tree first.
-    OC_ENFORCE(syncOnce());
+    OC_ENFORCE(syncOnce())
 }
 
 void FakeFolder::switchToVfs(QSharedPointer<OCC::Vfs> vfs)
 {
-    Q_ASSERT(vfs);
     auto opts = _syncEngine->syncOptions();
 
     opts._vfs->stop();
@@ -988,7 +1063,33 @@ void FakeFolder::switchToVfs(QSharedPointer<OCC::Vfs> vfs)
 
     opts._vfs = vfs;
     _syncEngine->setSyncOptions(opts);
-    startVfs();
+
+    OCC::VfsSetupParams vfsParams;
+    vfsParams.filesystemPath = localPath();
+    vfsParams.remotePath = QLatin1Char('/');
+    vfsParams.account = _account;
+    vfsParams.journal = _journalDb.get();
+    vfsParams.providerName = QStringLiteral("OC-TEST");
+    vfsParams.providerDisplayName = QStringLiteral("OC-TEST");
+    vfsParams.providerVersion = QVersionNumber(0, 1, 0);
+    vfsParams.multipleAccountsRegistered = false;
+    QObject::connect(_syncEngine.get(), &QObject::destroyed, vfs.data(), [vfs]() {
+        vfs->stop();
+        vfs->unregisterFolder();
+    });
+    QObject::connect(&_syncEngine->syncFileStatusTracker(), &OCC::SyncFileStatusTracker::fileStatusChanged,
+        vfs.data(), &OCC::Vfs::fileStatusChanged);
+
+    QObject::connect(vfs.get(), &OCC::Vfs::error, vfs.get(), [](const QString &error) {
+        QFAIL(qUtf8Printable(error));
+    });
+    QSignalSpy spy(vfs.get(), &OCC::Vfs::started);
+    vfs->start(vfsParams);
+
+    // don't use QVERIFY outside of the test slot
+    if (spy.isEmpty() && !spy.wait()) {
+        QFAIL("VFS Setup failed");
+    }
 }
 
 FileInfo FakeFolder::currentLocalState()
@@ -1039,35 +1140,12 @@ void FakeFolder::execUntilItemCompleted(const QString &relativePath)
 
 bool FakeFolder::isDehydratedPlaceholder(const QString &filePath)
 {
-    return _syncEngine->syncOptions()._vfs->isDehydratedPlaceholder(filePath);
+    return vfs()->isDehydratedPlaceholder(filePath);
 }
 
-void FakeFolder::startVfs()
+QSharedPointer<OCC::Vfs> FakeFolder::vfs() const
 {
-    auto vfs = _syncEngine->syncOptions()._vfs;
-    OCC::VfsSetupParams vfsParams;
-    vfsParams.filesystemPath = localPath();
-    vfsParams.remotePath = QLatin1Char('/');
-    vfsParams.account = _account;
-    vfsParams.journal = _journalDb.get();
-    vfsParams.providerName = QStringLiteral("OC-TEST");
-    vfsParams.providerDisplayName = QStringLiteral("OC-TEST");
-    vfsParams.providerVersion = QVersionNumber(0, 1);
-    QObject::connect(_syncEngine.get(), &QObject::destroyed, vfs.data(), [vfs]() {
-        vfs->stop();
-        vfs->unregisterFolder();
-    });
-
-    QObject::connect(vfs.get(), &OCC::Vfs::error, vfs.get(), [](const QString &error) {
-        QFAIL(qUtf8Printable(error));
-    });
-    QSignalSpy spy(vfs.get(), &OCC::Vfs::started);
-    vfs->start(vfsParams);
-
-    // don't use QVERIFY outside of the test slot
-    if (spy.isEmpty() && !spy.wait()) {
-        QFAIL("VFS Setup failed");
-    }
+    return _syncEngine->syncOptions()._vfs;
 }
 
 void FakeFolder::toDisk(QDir &dir, const FileInfo &templateFi)
@@ -1106,9 +1184,10 @@ void FakeFolder::fromDisk(QDir &dir, FileInfo &templateFi)
             fi.setLastModified(diskChild.lastModified());
             if (fi.isDehydratedPlaceholder) {
                 fi.contentChar = '\0';
+                fi.contentSize = 0;
             } else {
                 QFile f { diskChild.filePath() };
-                f.open(QFile::ReadOnly);
+                OC_ENFORCE(f.open(QFile::ReadOnly));
                 auto content = f.read(1);
                 if (content.size() == 0) {
                     qWarning() << "Empty file at:" << diskChild.filePath();

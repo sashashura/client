@@ -1042,8 +1042,14 @@ void ProcessDirectoryJob::processFileConflict(const SyncFileItemPtr &item, Proce
     // If there's no content hash, use heuristics
     if (serverEntry.checksumHeader.isEmpty()) {
         // If the size or mtime is different, it's definitely a conflict.
-        bool isConflict = (serverEntry.size != localEntry.size) || (serverEntry.modtime != localEntry.modtime);
-
+        bool sizeDiffers = serverEntry.size != localEntry.size;
+        bool modTimeDiffers = serverEntry.modtime != localEntry.modtime;
+        bool isConflict =  sizeDiffers || modTimeDiffers;
+        if (isConflict) {
+            qDebug()<< serverEntry.name << ": detected conflict: size difference: " << sizeDiffers << "mtime differs: " << modTimeDiffers;
+        } else {
+            qDebug() << serverEntry.name << ": no conflict detected";
+        }
         // It could be a conflict even if size and mtime match!
         //
         // In older client versions we always treated these cases as a
