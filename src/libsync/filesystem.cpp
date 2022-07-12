@@ -23,11 +23,12 @@
 
 #include "csync.h"
 #include "vio/csync_vio_local.h"
-#include "std/c_time.h"
 
 #ifdef Q_OS_WIN32
 #include <winsock2.h>
 #endif
+
+#include <filesystem>
 
 namespace OCC {
 
@@ -61,28 +62,26 @@ bool FileSystem::fileEquals(const QString &fn1, const QString &fn2)
 
 time_t FileSystem::getModTime(const QString &filename)
 {
-    csync_file_stat_t stat;
-    qint64 result = -1;
-    if (csync_vio_local_stat(filename, &stat) != -1
-        && (stat.modtime != 0)) {
-        result = stat.modtime;
-    } else {
-        result = Utility::qDateTimeToTime_t(QFileInfo(filename).lastModified());
-        qCWarning(lcFileSystem) << "Could not get modification time for" << filename
+    std::error_code error;
+    const auto time = std::filesystem::last_write_time(toFilesystemPath(filename), error);
+    const auto systemTime = std::chrono::system_clock::now() + (time - std::filesystem::file_time_type::clock::now());
+    if (error) {
+        const auto result = Utility::qDateTimeToTime_t(QFileInfo(filename).lastModified());
+        qCWarning(lcFileSystem) << "Could not get modification time for" << filename << error.value() << QString::fromStdString(error.message())
                                 << "with csync, using QFileInfo:" << result;
+        return result;
     }
-    return result;
+    return std::chrono::system_clock::to_time_t(systemTime);
 }
 
 bool FileSystem::setModTime(const QString &filename, time_t modTime)
 {
-    struct timeval times[2];
-    times[0].tv_sec = times[1].tv_sec = modTime;
-    times[0].tv_usec = times[1].tv_usec = 0;
-    int rc = c_utimes(filename, times);
-    if (rc != 0) {
+    const auto time = std::filesystem::file_time_type::clock::now() + (std::chrono::system_clock::from_time_t(modTime) - std::chrono::system_clock::now());
+    std::error_code error;
+    std::filesystem::last_write_time(toFilesystemPath(filename), time, error);
+    if (error) {
         qCWarning(lcFileSystem) << "Error setting mtime for" << filename
-                                << "failed: rc" << rc << ", errno:" << errno;
+                                << "failed: rc" << error.value() << ", errno:" << QString::fromStdString(error.message());
         Q_ASSERT(false);
         return false;
     }
