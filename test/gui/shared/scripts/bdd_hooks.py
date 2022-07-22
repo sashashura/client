@@ -119,6 +119,12 @@ def hook(context):
 
 @OnScenarioEnd
 def hook(context):
+    # close socket connection
+    global socketConnect
+    if socketConnect:
+        socketConnect.connected = False
+        socketConnect._sock.close()
+
     # Currently, this workaround is needed because we cannot find out a way to determine the pass/fail status of currently running test scenario.
     # And, resultCount("errors")  and resultCount("fails") return the total number of error/failed test scenarios of a test suite.
     global previousFailResultCount
