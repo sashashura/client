@@ -561,7 +561,7 @@ Questa azione interromperà qualsiasi sincronizzazione in corso.</translation>
     <message>
         <location filename="../src/gui/accountstate.cpp" line="74"/>
         <source>The url for %1 changed from %2 to %3, do you want to accept the changed url?</source>
-        <translation type="unfinished"/>
+        <translation>L&apos;URL per %1 è cambiato da %2 a %3, vuoi accettare il nuovo URL?</translation>
     </message>
     <message>
         <location filename="../src/gui/accountstate.cpp" line="77"/>
@@ -2805,7 +2805,7 @@ Si tratta di una nuova modalità sperimentale. Se decidi di usarla, ti preghiamo
     <message>
         <location filename="../src/libsync/propagatorjobs.cpp" line="176"/>
         <source>Can not create local folder %1 because of a local file name clash with %2</source>
-        <translation type="unfinished"/>
+        <translation>Impossibile creare la cartella locale %1 per un conflitto di nome del file locale %2!</translation>
     </message>
     <message>
         <location filename="../src/libsync/propagatorjobs.cpp" line="195"/>
