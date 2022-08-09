@@ -148,7 +148,7 @@
     <message>
         <location filename="../src/gui/folderwizardsourcepage.ui" line="29"/>
         <source>&amp;Choose...</source>
-        <translation>واختر...</translation>
+        <translation>اختر...</translation>
     </message>
 </context>
 <context>
