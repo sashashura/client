@@ -187,6 +187,7 @@ private:
      * Milliseconds for which to delay reconnection after 503/maintenance.
      */
     std::chrono::milliseconds _maintenanceToConnectedDelay;
+    friend class SpaceMigration;
 };
 }
 

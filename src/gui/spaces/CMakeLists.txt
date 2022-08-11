@@ -1,5 +1,9 @@
 add_library(spaces STATIC
-	spacesmodel.cpp spacesbrowser.cpp spacesbrowser.ui)
+        spacesmodel.cpp
+        spacesbrowser.cpp
+        spacesbrowser.ui
+)
+
 target_link_libraries(spaces PUBLIC Qt5::Widgets libsync)
 set_target_properties(spaces PROPERTIES AUTOUIC ON AUTORCC ON)
 target_compile_definitions(spaces

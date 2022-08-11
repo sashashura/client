@@ -89,6 +89,18 @@ struct OWNCLOUDSYNC_EXPORT SpaceSupport
     bool isValid() const;
 };
 
+struct OWNCLOUDSYNC_EXPORT Migration
+{
+    struct SpacesMigration
+    {
+        bool enabled = false;
+        QString endpoint;
+    };
+    Migration(const QVariantMap &spaces_support);
+
+    SpacesMigration space_migration;
+};
+
 /**
  * @brief The Capabilities class represents the capabilities of an ownCloud
  * server
@@ -228,6 +240,7 @@ public:
     /** Are avatars (profile pictures) available? */
     bool avatarsAvailable() const;
 
+    const Migration &migration() const;
 
     QVariantMap raw() const;
 
@@ -238,6 +251,7 @@ private:
     TusSupport _tusSupport;
     SpaceSupport _spaces;
     Status _status;
+    Migration _migration;
 };
 }
 

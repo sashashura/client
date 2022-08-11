@@ -81,7 +81,7 @@ void setUpInitialSyncFolder(AccountStatePtr accountStatePtr, bool useVfs)
                     for (const auto &d : drives) {
                         const QString name = GraphApi::Drives::getDriveDisplayName(d);
                         const QString folderName = FolderMan::instance()->findGoodPathForNewSyncFolder(localDir.filePath(name));
-                        addFolder(folderName, {}, QUrl::fromEncoded(d.getRoot().getWebDavUrl().toUtf8()), name);
+                        addFolder(folderName, {}, QUrl(d.getRoot().getWebDavUrl()), name);
                     }
                     finalize();
                 }

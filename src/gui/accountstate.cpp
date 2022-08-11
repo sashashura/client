@@ -20,6 +20,7 @@
 #include "creds/abstractcredentials.h"
 #include "creds/httpcredentials.h"
 #include "gui/settingsdialog.h"
+#include "gui/spacemigration.h"
 #include "gui/tlserrordialog.h"
 #include "logger.h"
 #include "settingsdialog.h"
@@ -410,6 +411,19 @@ void AccountState::slotConnectionValidatorResult(ConnectionValidator::Status sta
     }
     _connectionErrors = errors;
 
+    if (status == ConnectionValidator::Connected) {
+        Q_ASSERT(_account->hasCapabilities());
+        if (_account->capabilities().migration().space_migration.enabled) {
+            auto stateptr = AccountManager::instance()->account(_account->uuid());
+            auto migration = new SpaceMigration(stateptr, _account->capabilities().migration().space_migration.endpoint, this);
+            connect(migration, &SpaceMigration::finised, this, [migration, this] {
+                migration->deleteLater();
+                setState(Connected);
+            });
+            migration->start();
+            return;
+        }
+    }
     switch (status) {
     case ConnectionValidator::Connected:
         setState(Connected);

@@ -29,6 +29,7 @@ Capabilities::Capabilities(const QVariantMap &capabilities)
     , _tusSupport(_capabilities.value(QStringLiteral("files")).toMap().value(QStringLiteral("tus_support")).toMap())
     , _spaces(_capabilities.value(QStringLiteral("spaces")).toMap())
     , _status(_capabilities.value(QStringLiteral("core")).toMap().value(QStringLiteral("status")).toMap())
+    , _migration(_capabilities.value(QStringLiteral("migration")).toMap())
 {
 }
 
@@ -305,5 +306,16 @@ bool SpaceSupport::isValid() const
     return !version.isNull();
 }
 
+const Migration &Capabilities::migration() const
+{
+    return _migration;
+}
+
+OCC::Migration::Migration(const QVariantMap &data)
+{
+    const auto spaces = data.value(QStringLiteral("space_migration")).toMap();
+    space_migration.enabled = spaces.value(QStringLiteral("enabled")).toBool();
+    space_migration.endpoint = spaces.value(QStringLiteral("endpoint")).toString();
+}
 
 } // namespace OCC
