@@ -8,6 +8,8 @@ ownCloud admins and users.
 Summary
 -------
 
+* Bugfix - Don't unset implicit log flush: [#9515](https://github.com/owncloud/client/pull/9515)
+* Bugfix - We fixed a crash: [#10017](https://github.com/owncloud/client/pull/10017)
 * Bugfix - Compare usernames case insensitive: [#5174](https://github.com/owncloud/enterprise/issues/5174)
 * Bugfix - Add request time and other missing data to .owncloudsync.log: [#7348](https://github.com/owncloud/client/issues/7348)
 * Bugfix - Don't display a conext menu on the root folder: [#8595](https://github.com/owncloud/client/issues/8595)
@@ -28,6 +30,7 @@ Summary
 * Change - Make sharedialog preview be more resilient: [#8938](https://github.com/owncloud/client/issues/8938)
 * Change - We no longer persist cookies: [#9495](https://github.com/owncloud/client/issues/9495)
 * Change - We removed support for ownCloud servers < 10.0: [#9578](https://github.com/owncloud/client/issues/9578)
+* Change - Drop socket upload job: [#9585](https://github.com/owncloud/client/issues/9585)
 * Change - Remove support for Windows 7 sidebar links: [#9618](https://github.com/owncloud/client/pull/9618)
 * Change - Rewrote TLS error handling: [#9655](https://github.com/owncloud/client/issues/9655)
 * Change - We removed the TLS certificate button from the account page: [#9675](https://github.com/owncloud/client/pull/9675)
@@ -49,9 +52,23 @@ Summary
 * Enhancement - Remove app name from connection error message: [#9923](https://github.com/owncloud/client/issues/9923)
 * Enhancement - Allow HTTP/1.1 pipelining: [#9930](https://github.com/owncloud/client/pull/9930/)
 * Enhancement - Don't abort sync if a user requests a file: [#9956](https://github.com/owncloud/client/pull/9956)
+* Enhancement - Improve look and feel of many dialogs on macOS: [#9995](https://github.com/owncloud/client/issues/9995)
 
 Details
 -------
+
+* Bugfix - Don't unset implicit log flush: [#9515](https://github.com/owncloud/client/pull/9515)
+
+   Since https://github.com/owncloud/client/pull/9515 we flush the the log if the output is
+   stdout. We fixed a bug which disabled it again.
+
+   https://github.com/owncloud/client/pull/9515
+
+* Bugfix - We fixed a crash: [#10017](https://github.com/owncloud/client/pull/10017)
+
+   We fixed a crash that could occur after a folder reported a setup error
+
+   https://github.com/owncloud/client/pull/10017
 
 * Bugfix - Compare usernames case insensitive: [#5174](https://github.com/owncloud/enterprise/issues/5174)
 
@@ -180,6 +197,10 @@ Details
 
    https://github.com/owncloud/client/issues/9578
 
+* Change - Drop socket upload job: [#9585](https://github.com/owncloud/client/issues/9585)
+
+   https://github.com/owncloud/client/issues/9585
+
 * Change - Remove support for Windows 7 sidebar links: [#9618](https://github.com/owncloud/client/pull/9618)
 
    We removed the support for Windows < 10 sidebar links.
@@ -216,6 +237,8 @@ Details
 * Enhancement - Don't query private links if disabled on the server: [#8998](https://github.com/owncloud/client/issues/8998)
 
    https://github.com/owncloud/client/issues/8998
+   https://github.com/owncloud/client/pull/9840
+   https://github.com/owncloud/client/pull/9964
 
 * Enhancement - Add CMakeOption WITH_AUTO_UPDATER: [#9082](https://github.com/owncloud/client/issues/9082)
 
@@ -341,6 +364,10 @@ Details
 
    https://github.com/owncloud/client/issues/9832
    https://github.com/owncloud/client/pull/9956
+
+* Enhancement - Improve look and feel of many dialogs on macOS: [#9995](https://github.com/owncloud/client/issues/9995)
+
+   https://github.com/owncloud/client/issues/9995
 
 Changelog for ownCloud Desktop Client [2.10.1] (2022-04-05)
 =======================================

@@ -42,8 +42,8 @@ LogBrowser::LogBrowser(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::LogBrowser)
 {
+    Utility::setModal(this);
     ui->setupUi(this);
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     ui->warningLabel->setPixmap(Utility::getCoreIcon(QStringLiteral("warning")).pixmap(ui->warningLabel->size()));
     ui->locationLabel->setText(Logger::instance()->temporaryFolderLogDirPath());

@@ -21,6 +21,8 @@
 #include "configfile.h"
 #include "theme.h"
 
+#include "gui/settingsdialog.h"
+
 #ifdef WITH_AUTO_UPDATER
 #include "updater/updater.h"
 #include "updater/ocupdater.h"
@@ -199,7 +201,7 @@ void GeneralSettings::slotUpdateInfo()
 #endif
 
     // Channel selection
-    _ui->updateChannel->setCurrentIndex(ConfigFile().updateChannel() == "beta" ? 1 : 0);
+    _ui->updateChannel->setCurrentIndex(ConfigFile().updateChannel() == QLatin1String("beta") ? 1 : 0);
     connect(_ui->updateChannel, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
         this, &GeneralSettings::slotUpdateChannelChanged, Qt::UniqueConnection);
 #endif
@@ -296,12 +298,10 @@ void GeneralSettings::slotShowInExplorerNavigationPane(bool checked)
 void GeneralSettings::slotIgnoreFilesEditor()
 {
     if (_ignoreEditor.isNull()) {
-        _ignoreEditor = new IgnoreListEditor(this);
+        _ignoreEditor = new IgnoreListEditor(ocApp()->gui()->settingsDialog());
         _ignoreEditor->setAttribute(Qt::WA_DeleteOnClose, true);
-        _ignoreEditor->open();
-    } else {
-        ownCloudGui::raiseDialog(_ignoreEditor);
     }
+    ownCloudGui::raiseDialog(_ignoreEditor);
 }
 
 void GeneralSettings::reloadConfig()

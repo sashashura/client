@@ -64,7 +64,7 @@ ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
     , _disableCompleterActivated(false)
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    setObjectName("SharingDialogUG"); // required as group for saveGeometry call
+    setObjectName(QStringLiteral("SharingDialogUG")); // required as group for saveGeometry call
 
     _ui->setupUi(this);
 
@@ -73,7 +73,7 @@ ShareUserGroupWidget::ShareUserGroupWidget(AccountPtr account,
 
     _completer = new QCompleter(this);
     _completerModel = new ShareeModel(_account,
-        _isFile ? QLatin1String("file") : QLatin1String("folder"),
+        _isFile ? QStringLiteral("file") : QStringLiteral("folder"),
         _completer);
     connect(_completerModel, &ShareeModel::shareesReady, this, &ShareUserGroupWidget::slotShareesReady);
     connect(_completerModel, &ShareeModel::displayErrorMessage, this, &ShareUserGroupWidget::displayError);
@@ -164,7 +164,7 @@ void ShareUserGroupWidget::searchForSharees()
     ShareeModel::ShareeSet blacklist;
 
     // Add the current user to _sharees since we can't share with ourself
-    QSharedPointer<Sharee> currentUser(new Sharee(_account->credentials()->user(), "", Sharee::Type::User));
+    QSharedPointer<Sharee> currentUser(new Sharee(_account->credentials()->user(), QString(), Sharee::Type::User));
     blacklist << currentUser;
 
     const auto &shareUserLines = _ui->scrollArea->findChildren<ShareUserLine *>();
@@ -322,7 +322,7 @@ void ShareUserGroupWidget::displayError(int code, const QString &message)
 
 void ShareUserGroupWidget::slotPrivateLinkOpenBrowser()
 {
-    Utility::openBrowser(_privateLinkUrl, this);
+    Utility::openBrowser(QUrl(_privateLinkUrl), this);
 }
 
 void ShareUserGroupWidget::slotPrivateLinkCopy()
@@ -426,14 +426,15 @@ void ShareUserLine::loadAvatar()
 
     // See core/js/placeholder.js for details on colors and styling
     const QColor bg = QColor::fromHslF(hue, 0.7, 0.68);
-    const QString style = QString(R"(* {
+    const QString style = QStringLiteral(R"(* {
         color: #fff;
         background-color: %1;
         border-radius: %2px;
         text-align: center;
         line-height: %2px;
         font-size: %2px;
-    })").arg(bg.name(), QString::number(avatarSize / 2));
+    })")
+                              .arg(bg.name(), QString::number(avatarSize / 2));
     _ui->avatar->setStyleSheet(style);
 
     // The avatar label is the first character of the user name.
@@ -464,7 +465,7 @@ void ShareUserLine::slotAvatarLoaded(const QPixmap &avatar)
     _ui->avatar->setPixmap(_avatar);
 
     // Remove the stylesheet for the fallback avatar
-    _ui->avatar->setStyleSheet("");
+    _ui->avatar->setStyleSheet(QString());
 }
 
 void ShareUserLine::on_deleteShareButton_clicked()

@@ -26,7 +26,6 @@
 #include "common/asserts.h"
 #include "common/version.h"
 #include "common/vfs.h"
-#include "config.h"
 #include "configfile.h"
 #include "connectionvalidator.h"
 #include "creds/abstractcredentials.h"
@@ -124,7 +123,7 @@ void migrateConfigFile(const QCoreApplication *app)
                     const auto filesList = QDir(oldDir).entryInfoList(QDir::Files);
                     qCInfo(lcApplication) << Q_FUNC_INFO << "Will move the individual files" << filesList;
                     for (const auto &fileInfo : filesList) {
-                        if (!QFile::rename(fileInfo.canonicalFilePath(), confDir + "/" + fileInfo.fileName())) {
+                        if (!QFile::rename(fileInfo.canonicalFilePath(), confDir + QLatin1Char('/') + fileInfo.fileName())) {
                             qCWarning(lcApplication) << Q_FUNC_INFO << "Fallback move of " << fileInfo.fileName() << "also failed";
                         } else {
                             // we found a suitable config directory to migrate, hence we can stop here
@@ -184,7 +183,7 @@ bool Application::configVersionMigration()
 
         QMessageBox box(
             QMessageBox::Warning,
-            APPLICATION_SHORTNAME,
+            Theme::instance()->appNameGUI(),
             tr("Some settings were configured in newer versions of this client and "
                "use features that are not available in this version.<br>"
                "<br>"
@@ -201,7 +200,7 @@ bool Application::configVersionMigration()
             return false;
         }
 
-        auto settings = ConfigFile::settingsWithGroup("foo");
+        auto settings = ConfigFile::settingsWithGroup(QStringLiteral("foo"));
         settings->endGroup();
 
         // Wipe confusing keys from the future, ignore the others
@@ -234,7 +233,7 @@ Application::Application(int &argc, char **argv)
 {
 #ifdef Q_OS_WIN
     // Ensure OpenSSL config file is only loaded from app directory
-    const QString opensslConf = QCoreApplication::applicationDirPath() + QString("/openssl.cnf");
+    const QString opensslConf = QCoreApplication::applicationDirPath() + QStringLiteral("/openssl.cnf");
     qputenv("OPENSSL_CONF", opensslConf.toLocal8Bit());
 #elif defined(Q_OS_LINUX)
 #if defined(OC_PLUGIN_DIR)
@@ -243,7 +242,7 @@ Application::Application(int &argc, char **argv)
 #endif
     // TODO: Can't set this without breaking current config paths
     //    setOrganizationName(QLatin1String(APPLICATION_VENDOR));
-    setOrganizationDomain(QLatin1String(APPLICATION_REV_DOMAIN));
+    setOrganizationDomain(QStringLiteral(APPLICATION_REV_DOMAIN));
     setApplicationName(_theme->appName());
     setWindowIcon(_theme->applicationIcon());
 
@@ -349,7 +348,7 @@ Application::Application(int &argc, char **argv)
     _proxy.setupQtProxyFromConfig(); // folders have to be defined first, than we set up the Qt proxy.
 
     // Enable word wrapping of QInputDialog (#4197)
-    setStyleSheet("QInputDialog QLabel { qproperty-wordWrap:1; }");
+    setStyleSheet(QStringLiteral("QInputDialog QLabel { qproperty-wordWrap:1; }"));
 
     connect(AccountManager::instance(), &AccountManager::accountAdded,
         this, &Application::slotAccountStateAdded);
@@ -511,7 +510,7 @@ AccountStatePtr Application::addNewAccount(AccountPtr newAccount)
 #ifdef Q_OS_MAC
     // Don't auto start when not being 'installed'
     shouldSetAutoStart = shouldSetAutoStart
-        && QCoreApplication::applicationDirPath().startsWith("/Applications/");
+        && QCoreApplication::applicationDirPath().startsWith(QLatin1String("/Applications/"));
 #endif
     if (shouldSetAutoStart) {
         Utility::setLaunchOnStartup(_theme->appName(), _theme->appNameGUI(), true);
@@ -527,9 +526,17 @@ void Application::setupLogging()
 {
     // might be called from second instance
     auto logger = Logger::instance();
-    logger->setLogFile(_logFile);
-    logger->setLogDir(_logDir);
+    // call setLogFlush first, other log settings might already imply flushing
+    // so setting it false in the end will have undesired results.
     logger->setLogFlush(_logFlush);
+
+    if (!_logDir.isEmpty()) {
+        logger->setLogDir(_logDir);
+    }
+    if (!_logFile.isEmpty()) {
+        Q_ASSERT(_logDir.isEmpty());
+        logger->setLogFile(_logFile);
+    }
     logger->setLogDebug(_logDebug);
 
     // Possibly configure logging from config file
@@ -570,7 +577,7 @@ static void displayHelpText(const QString &t, std::ostream &stream = std::cout)
     stream << qUtf8Printable(t) << std::endl;
 #ifdef Q_OS_WIN
     // No console on Windows.
-    QString spaces(80, ' '); // Add a line of non-wrapped space to make the messagebox wide enough.
+    QString spaces(80, QLatin1Char(' ')); // Add a line of non-wrapped space to make the messagebox wide enough.
     QString text = QStringLiteral("<qt><pre style='white-space:pre-wrap'>")
         + t.toHtmlEscaped() + QStringLiteral("</pre><pre>") + spaces + QStringLiteral("</pre></qt>");
     QMessageBox::information(0, Theme::instance()->appNameGUI(), text);
@@ -603,19 +610,19 @@ void Application::parseOptions(const QStringList &arguments)
         return option;
     };
 
-    auto showSettingsOption = addOption({ { "s", "showsettings" }, tr("Show the settings dialog while starting.") });
-    auto quitInstanceOption = addOption({ { "q", "quit" }, tr("Quit the running instance.") });
-    auto logFileOption = addOption({ "logfile", tr("Write log to file (use - to write to stdout)."), "filename" });
-    auto logDirOption = addOption({ "logdir", tr("Write each sync log output in a new file in folder."), "name" });
-    auto logFlushOption = addOption({ "logflush", tr("Flush the log file after every write.") });
-    auto logDebugOption = addOption({ "logdebug", tr("Output debug-level messages in the log.") });
-    auto languageOption = addOption({ "language", tr("Override UI language."), "language" });
-    auto listLanguagesOption = addOption({ "list-languages", tr("Override UI language.") });
-    auto confDirOption = addOption({ "confdir", tr("Use the given configuration folder."), "dirname" });
-    auto debugOption = addOption({ "debug", tr("Enable debug mode.") });
+    auto showSettingsOption = addOption({ { QStringLiteral("s"), QStringLiteral("showsettings") }, tr("Show the settings dialog while starting.") });
+    auto quitInstanceOption = addOption({ { QStringLiteral("q"), QStringLiteral("quit") }, tr("Quit the running instance.") });
+    auto logFileOption = addOption({ QStringLiteral("logfile"), tr("Write log to file (use - to write to stdout)."), QStringLiteral("filename") });
+    auto logDirOption = addOption({ QStringLiteral("logdir"), tr("Write each sync log output in a new file in folder."), QStringLiteral("name") });
+    auto logFlushOption = addOption({ QStringLiteral("logflush"), tr("Flush the log file after every write.") });
+    auto logDebugOption = addOption({ QStringLiteral("logdebug"), tr("Output debug-level messages in the log.") });
+    auto languageOption = addOption({ QStringLiteral("language"), tr("Override UI language."), QStringLiteral("language") });
+    auto listLanguagesOption = addOption({ QStringLiteral("list-languages"), tr("Override UI language.") });
+    auto confDirOption = addOption({ QStringLiteral("confdir"), tr("Use the given configuration folder."), QStringLiteral("dirname") });
+    auto debugOption = addOption({ QStringLiteral("debug"), tr("Enable debug mode.") });
 
     // virtual file system parameters (optional)
-    parser.addPositionalArgument("vfs file", tr("Virtual file system file to be opened (optional)."), { tr("[<vfs file>]") });
+    parser.addPositionalArgument(QStringLiteral("vfs file"), tr("Virtual file system file to be opened (optional)."), { tr("[<vfs file>]") });
 
     parser.process(arguments);
 
@@ -630,6 +637,10 @@ void Application::parseOptions(const QStringList &arguments)
         _logFile = parser.value(logFileOption);
     }
     if (parser.isSet(logDirOption)) {
+        if (parser.isSet(logFileOption)) {
+            displayHelpText(tr("--logfile and --logdir are mutually exclusive"));
+            std::exit(1);
+        }
         _logDir = parser.value(logDirOption);
     }
     if (parser.isSet(logFlushOption)) {
@@ -663,7 +674,7 @@ void Application::parseOptions(const QStringList &arguments)
     if (parser.isSet(listLanguagesOption)) {
         auto availableTranslations = Translations::listAvailableTranslations().toList();
         availableTranslations.sort(Qt::CaseInsensitive);
-        displayHelpText(tr("Available translations: %1").arg(availableTranslations.join(", ")));
+        displayHelpText(tr("Available translations: %1").arg(availableTranslations.join(QStringLiteral(", "))));
         std::exit(1);
     }
 
@@ -688,10 +699,10 @@ QString substLang(const QString &lang)
 
     // Simplified Chinese
     if (lang == QLatin1String("zh_Hans"))
-        return QLatin1String("zh_CN");
+        return QStringLiteral("zh_CN");
     // Traditional Chinese
     if (lang == QLatin1String("zh_Hant"))
-        return QLatin1String("zh_TW");
+        return QStringLiteral("zh_TW");
     return lang;
 }
 

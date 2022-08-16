@@ -43,7 +43,7 @@ namespace {
 
 static QString removeTrailingSlash(const QString &s)
 {
-    if (s.endsWith('/')) {
+    if (s.endsWith(QLatin1Char('/'))) {
         return s.left(s.size() - 1);
     }
     return s;
@@ -201,7 +201,7 @@ QVariant FolderStatusModel::data(const QModelIndex &index, int role) const
         case Qt::DisplayRole:
             if (x->_hasError) {
                 return QVariant(tr("Error while loading the list of folders from the server.")
-                    + QString("\n") + x->_lastErrorString);
+                    + QStringLiteral("\n") + x->_lastErrorString);
             } else {
                 return tr("Fetching folder list from server...");
             }
@@ -261,7 +261,7 @@ QVariant FolderStatusModel::data(const QModelIndex &index, int role) const
             toolTip = Theme::instance()->statusHeaderText(f->syncResult().status());
         else
             toolTip = tr("Signed out");
-        toolTip += "\n";
+        toolTip += QLatin1String("\n");
         toolTip += folderInfo._folder->path();
         return toolTip;
     }
@@ -429,7 +429,7 @@ QModelIndex FolderStatusModel::indexForPath(Folder *f, const QString &path) cons
         return QModelIndex();
     }
 
-    int slashPos = path.lastIndexOf('/');
+    int slashPos = path.lastIndexOf(QLatin1Char('/'));
     if (slashPos == -1) {
         // first level folder
         for (int i = 0; i < _folders.size(); ++i) {
@@ -617,7 +617,7 @@ void FolderStatusModel::resetAndFetch(const QModelIndex &parent)
 
 void FolderStatusModel::slotGatherPermissions(const QString &href, const QMap<QString, QString> &map)
 {
-    auto it = map.find("permissions");
+    auto it = map.find(QStringLiteral("permissions"));
     if (it == map.end())
         return;
 
@@ -657,8 +657,8 @@ void FolderStatusModel::slotUpdateDirectories(const QStringList &list)
 
     QUrl url = parentInfo->_folder->remoteUrl();
     QString pathToRemove = url.path();
-    if (!pathToRemove.endsWith('/'))
-        pathToRemove += '/';
+    if (!pathToRemove.endsWith(QLatin1Char('/')))
+        pathToRemove += QLatin1Char('/');
 
     QStringList selectiveSyncBlackList;
     bool ok1 = true;
@@ -701,9 +701,9 @@ void FolderStatusModel::slotUpdateDirectories(const QStringList &list)
         newInfo._pathIdx = parentInfo->_pathIdx;
         newInfo._pathIdx << newSubs.size();
         newInfo._size = job->sizes().value(path);
-        newInfo._isExternal = permissionMap.value(removeTrailingSlash(path)).toString().contains("M");
+        newInfo._isExternal = permissionMap.value(removeTrailingSlash(path)).toString().contains(QLatin1String("M"));
         newInfo._path = relativePath;
-        newInfo._name = removeTrailingSlash(relativePath).split('/').last();
+        newInfo._name = removeTrailingSlash(relativePath).split(QLatin1Char('/')).last();
 
         if (relativePath.isEmpty())
             continue;

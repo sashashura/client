@@ -226,7 +226,7 @@ QIcon Theme::loadIcon(const QString &flavor, const QString &name, IconType iconT
                 cached.addFile(pixmapName, { size, size });
             } else if (size >= 128) {
                 if (!previousIcon.isEmpty()) {
-                    qWarning() << "Upsacling:" << previousIcon << "to" << size;
+                    qWarning() << "Upscaling:" << previousIcon << "to" << size;
                     cached.addPixmap(QPixmap(previousIcon).scaled({ size, size }, Qt::KeepAspectRatio, Qt::SmoothTransformation));
                 }
             }
@@ -521,7 +521,7 @@ QIcon Theme::syncStateIcon(const SyncResult &result, bool sysTray, bool sysTrayM
 
 QIcon Theme::folderDisabledIcon() const
 {
-    return themeIcon(QLatin1String("state-pause"));
+    return themeIcon(QStringLiteral("state-pause"));
 }
 
 QIcon Theme::folderOfflineIcon(bool sysTray, bool sysTrayMenuVisible) const

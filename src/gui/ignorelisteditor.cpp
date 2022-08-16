@@ -12,11 +12,12 @@
  * for more details.
  */
 
-#include "configfile.h"
-
 #include "ignorelisteditor.h"
-#include "folderman.h"
 #include "ui_ignorelisteditor.h"
+
+#include "configfile.h"
+#include "gui/folderman.h"
+#include "gui/guiutility.h"
 
 #include <QFile>
 #include <QDir>
@@ -36,7 +37,7 @@ IgnoreListEditor::IgnoreListEditor(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::IgnoreListEditor)
 {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Utility::setModal(this);
     ui->setupUi(this);
 
     ConfigFile cfgFile;
@@ -44,9 +45,9 @@ IgnoreListEditor::IgnoreListEditor(QWidget *parent)
                          "and cannot be modified in this view.")
                           .arg(QDir::toNativeSeparators(cfgFile.excludeFile(ConfigFile::SystemScope)));
 
-    addPattern(".csync_journal.db*", /*deletable=*/false, /*readonly=*/true, /*global=*/true);
-    addPattern("._sync_*.db*", /*deletable=*/false, /*readonly=*/true, /*global=*/true);
-    addPattern(".sync_*.db*", /*deletable=*/false, /*readonly=*/true, /*global=*/true);
+    addPattern(QStringLiteral(".csync_journal.db*"), /*deletable=*/false, /*readonly=*/true, /*global=*/true);
+    addPattern(QStringLiteral("._sync_*.db*"), /*deletable=*/false, /*readonly=*/true, /*global=*/true);
+    addPattern(QStringLiteral(".sync_*.db*"), /*deletable=*/false, /*readonly=*/true, /*global=*/true);
     readIgnoreFile(cfgFile.excludeFile(ConfigFile::SystemScope), /*global=*/true);
     readIgnoreFile(cfgFile.excludeFile(ConfigFile::UserScope), /*global=*/false);
 
@@ -103,7 +104,7 @@ void IgnoreListEditor::slotUpdateLocalIgnoreList()
             QByteArray prepend;
             if (deletableItem->checkState() == Qt::Checked) {
                 prepend = "]";
-            } else if (patternItem->text().startsWith('#')) {
+            } else if (patternItem->text().startsWith(QLatin1Char('#'))) {
                 prepend = "\\";
             }
             ignores.write(prepend + patternItem->text().toUtf8() + '\n');
@@ -157,16 +158,16 @@ void IgnoreListEditor::readIgnoreFile(const QString &file, bool global)
         line.chop(1);
 
         // Collect empty lines and comments, we want to preserve them
-        if (line.isEmpty() || line.startsWith("#")) {
+        if (line.isEmpty() || line.startsWith(QLatin1String("#"))) {
             skippedLines.append(line);
             // A directive that prohibits editing in the ui
-            if (line == "#!readonly")
+            if (line == QLatin1String("#!readonly"))
                 readonly = true;
             continue;
         }
 
         bool deletable = false;
-        if (line.startsWith(']')) {
+        if (line.startsWith(QLatin1Char(']'))) {
             deletable = true;
             line = line.mid(1);
         }

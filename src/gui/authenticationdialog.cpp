@@ -12,7 +12,8 @@
  * for more details.
  */
 
-#include "authenticationdialog.h"
+#include "gui/authenticationdialog.h"
+#include "gui/guiutility.h"
 
 #include <QLabel>
 #include <QLineEdit>
@@ -27,6 +28,8 @@ AuthenticationDialog::AuthenticationDialog(const QString &realm, const QString &
     , _user(new QLineEdit)
     , _password(new QLineEdit)
 {
+    Utility::setModal(this);
+
     setWindowTitle(tr("Authentication Required"));
     QVBoxLayout *lay = new QVBoxLayout(this);
     QLabel *label = new QLabel(tr("Enter username and password for '%1' at %2.").arg(realm, domain));

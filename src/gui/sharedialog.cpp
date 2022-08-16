@@ -13,18 +13,20 @@
  */
 
 #include "sharedialog.h"
-#include "sharee.h"
-#include "sharelinkwidget.h"
-#include "shareusergroupwidget.h"
 #include "ui_sharedialog.h"
 
+#include "gui/accountstate.h"
+#include "gui/application.h"
+#include "gui/guiutility.h"
+#include "gui/settingsdialog.h"
+#include "gui/sharee.h"
+#include "gui/sharelinkwidget.h"
+#include "gui/shareusergroupwidget.h"
+#include "gui/thumbnailjob.h"
+
 #include "account.h"
-#include "accountstate.h"
-#include "application.h"
 #include "configfile.h"
-#include "settingsdialog.h"
 #include "theme.h"
-#include "thumbnailjob.h"
 
 #include <QFileInfo>
 #include <QFileIconProvider>
@@ -58,9 +60,9 @@ ShareDialog::ShareDialog(AccountStatePtr accountState,
     , _progressIndicator(nullptr)
     , _baseUrl(baseUrl)
 {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Utility::setModal(this);
     setAttribute(Qt::WA_DeleteOnClose);
-    setObjectName("SharingDialog");
+    setObjectName(QStringLiteral("SharingDialog"));
 
     _ui->setupUi(this);
 
@@ -151,12 +153,12 @@ ShareDialog::~ShareDialog()
 
 void ShareDialog::slotPropfindReceived(const QMap<QString, QString> &result)
 {
-    const auto &receivedPermissions = result["share-permissions"];
+    const auto &receivedPermissions = result[QStringLiteral("share-permissions")];
     if (!receivedPermissions.isEmpty()) {
         _maxSharingPermissions = static_cast<SharePermissions>(receivedPermissions.toInt());
         qCInfo(lcSharing) << "Received sharing permissions for" << _sharePath << _maxSharingPermissions;
     }
-    auto privateLinkUrl = result["privatelink"];
+    auto privateLinkUrl = result[QStringLiteral("privatelink")];
     if (!privateLinkUrl.isEmpty()) {
         qCInfo(lcSharing) << "Received private link url for" << _sharePath << privateLinkUrl;
         _privateLinkUrl = privateLinkUrl;

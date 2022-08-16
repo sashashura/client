@@ -27,6 +27,7 @@
 #include "creds/abstractcredentials.h"
 #include "gui/application.h"
 #include "gui/askexperimentalvirtualfilesfeaturemessagebox.h"
+#include "gui/guiutility.h"
 #include "gui/settingsdialog.h"
 #include "networkjobs.h"
 #include "theme.h"
@@ -108,6 +109,11 @@ QString FolderWizardPrivate::initialLocalPath() const
     return FolderMan::instance()->findGoodPathForNewSyncFolder(defaultPath);
 }
 
+QString FolderWizardPrivate::remotePath() const
+{
+    return _folderWizardTargetPage ? _folderWizardTargetPage->targetPath() : QString();
+}
+
 QUrl FolderWizardPrivate::davUrl() const
 {
     if (_account->supportsSpaces()) {
@@ -149,11 +155,11 @@ bool FolderWizardPrivate::useVirtualFiles() const
     return useVirtualFiles;
 }
 
-FolderWizard::FolderWizard(const AccountStatePtr &account, QWidget *parent, Qt::WindowFlags flags)
-    : QWizard(parent, flags)
+FolderWizard::FolderWizard(const AccountStatePtr &account, QWidget *parent)
+    : QWizard(parent)
     , d_ptr(new FolderWizardPrivate(this, account))
 {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Utility::setModal(this);
     setWindowTitle(tr("Add Folder Sync Connection"));
     setOptions(QWizard::CancelButtonOnLeft);
     setButtonText(QWizard::FinishButton, tr("Add Sync Connection"));
@@ -200,7 +206,7 @@ FolderWizard::Result FolderWizard::result()
     return {
         d->davUrl(),
         localPath,
-        d->_folderWizardTargetPage ? d->_folderWizardTargetPage->targetPath() : QString(),
+        d->remotePath(),
         d->displayName(),
         d->useVirtualFiles(),
         d->_folderWizardSelectiveSyncPage ? d->_folderWizardSelectiveSyncPage->selectiveSyncBlackList() : QStringList()

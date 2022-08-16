@@ -201,8 +201,8 @@ bool Folder::checkLocalPath()
     if (_canonicalLocalPath.isEmpty()) {
         qCWarning(lcFolder) << "Broken symlink:" << _definition.localPath();
         _canonicalLocalPath = _definition.localPath();
-    } else if (!_canonicalLocalPath.endsWith('/')) {
-        _canonicalLocalPath.append('/');
+    } else if (!_canonicalLocalPath.endsWith(QLatin1Char('/'))) {
+        _canonicalLocalPath.append(QLatin1Char('/'));
     }
 
     QString error;
@@ -273,13 +273,13 @@ QString Folder::shortGuiLocalPath() const
 {
     QString p = _definition.localPath();
     QString home = QDir::homePath();
-    if (!home.endsWith('/')) {
-        home.append('/');
+    if (!home.endsWith(QLatin1Char('/'))) {
+        home.append(QLatin1Char('/'));
     }
     if (p.startsWith(home)) {
         p = p.mid(home.length());
     }
-    if (p.length() > 1 && p.endsWith('/')) {
+    if (p.length() > 1 && p.endsWith(QLatin1Char('/'))) {
         p.chop(1);
     }
     return QDir::toNativeSeparators(p);
@@ -301,7 +301,7 @@ QString Folder::cleanPath() const
 {
     QString cleanedPath = QDir::cleanPath(_canonicalLocalPath);
 
-    if (cleanedPath.length() == 3 && cleanedPath.endsWith(":/"))
+    if (cleanedPath.length() == 3 && cleanedPath.endsWith(QLatin1String(":/")))
         cleanedPath.remove(2, 1);
 
     return cleanedPath;
@@ -665,8 +665,7 @@ void Folder::slotWatchedPathChanged(const QString &path, ChangeReason reason)
     //
     // We do this before checking for our own sync-related changes to make
     // extra sure to not miss relevant changes.
-    const auto relativePathBytes = relativePath.toUtf8();
-    _localDiscoveryTracker->addTouchedPath(relativePathBytes);
+    _localDiscoveryTracker->addTouchedPath(relativePath);
 
 // The folder watcher fires a lot of bogus notifications during
 // a sync operation, both for actual user files and the database
@@ -685,7 +684,7 @@ void Folder::slotWatchedPathChanged(const QString &path, ChangeReason reason)
 
 
     SyncJournalFileRecord record;
-    _journal.getFileRecord(relativePathBytes, &record);
+    _journal.getFileRecord(relativePath.toUtf8(), &record);
     if (reason != ChangeReason::UnLock) {
         // Check that the mtime/size actually changed or there was
         // an attribute change (pin state) that caused the notification
@@ -822,7 +821,7 @@ void Folder::saveToSettings() const
     settings->beginGroup(settingsGroup);
     // Note: Each of these groups might have a "version" tag, but that's
     //       currently unused.
-    settings->beginGroup(_definition.id());
+    settings->beginGroup(QString::fromUtf8(_definition.id()));
     FolderDefinition::save(*settings, _definition);
 
     settings->sync();
@@ -832,14 +831,15 @@ void Folder::saveToSettings() const
 void Folder::removeFromSettings() const
 {
     auto settings = _accountState->settings();
-    settings->beginGroup(QLatin1String("Folders"));
-    settings->remove(_definition.id());
+    const QString id = QString::fromUtf8(_definition.id());
+    settings->beginGroup(QStringLiteral("Folders"));
+    settings->remove(id);
     settings->endGroup();
-    settings->beginGroup(QLatin1String("Multifolders"));
-    settings->remove(_definition.id());
+    settings->beginGroup(QStringLiteral("Multifolders"));
+    settings->remove(id);
     settings->endGroup();
-    settings->beginGroup(QLatin1String("FoldersWithPlaceholders"));
-    settings->remove(_definition.id());
+    settings->beginGroup(QStringLiteral("FoldersWithPlaceholders"));
+    settings->remove(id);
 }
 
 bool Folder::isFileExcludedAbsolute(const QString &fullPath) const
@@ -901,10 +901,10 @@ void Folder::wipeForRemoval()
     }
 
     // Also remove other db related files
-    QFile::remove(stateDbFile + ".ctmp");
-    QFile::remove(stateDbFile + "-shm");
-    QFile::remove(stateDbFile + "-wal");
-    QFile::remove(stateDbFile + "-journal");
+    QFile::remove(stateDbFile + QStringLiteral(".ctmp"));
+    QFile::remove(stateDbFile + QStringLiteral("-shm"));
+    QFile::remove(stateDbFile + QStringLiteral("-wal"));
+    QFile::remove(stateDbFile + QStringLiteral("-journal"));
 
     _vfs->stop();
     _vfs->unregisterFolder();
@@ -1167,7 +1167,7 @@ void Folder::slotNewBigFolderDiscovered(const QString &newF, bool isExternal)
 
 void Folder::slotLogPropagationStart()
 {
-    _fileLog->logLap("Propagation starts");
+    _fileLog->logLap(QStringLiteral("Propagation starts"));
 }
 
 void Folder::slotScheduleThisFolder()
@@ -1182,7 +1182,7 @@ void Folder::slotNextSyncFullLocalDiscovery()
 
 void Folder::schedulePathForLocalDiscovery(const QString &relativePath)
 {
-    _localDiscoveryTracker->addTouchedPath(relativePath.toUtf8());
+    _localDiscoveryTracker->addTouchedPath(relativePath);
 }
 
 void Folder::slotFolderConflicts(Folder *folder, const QStringList &conflictPaths)
@@ -1214,7 +1214,7 @@ void Folder::warnOnNewExcludedItem(const SyncJournalFileRecord &record, QStringV
     auto blacklist = _journal.getSelectiveSyncList(SyncJournalDb::SelectiveSyncBlackList, &ok);
     if (!ok)
         return;
-    if (!blacklist.contains(path + "/"))
+    if (!blacklist.contains(path + QLatin1Char('/')))
         return;
 
     const auto message = fi.isDir()
@@ -1327,13 +1327,13 @@ FolderDefinition::FolderDefinition(const QByteArray &id, const QUrl &davUrl, con
 
 void FolderDefinition::save(QSettings &settings, const FolderDefinition &folder)
 {
-    settings.setValue(QLatin1String("localPath"), folder.localPath());
-    settings.setValue(QLatin1String("journalPath"), folder.journalPath);
-    settings.setValue(QLatin1String("targetPath"), folder.targetPath());
+    settings.setValue(QStringLiteral("localPath"), folder.localPath());
+    settings.setValue(QStringLiteral("journalPath"), folder.journalPath);
+    settings.setValue(QStringLiteral("targetPath"), folder.targetPath());
     settings.setValue(davUrlC(), folder.webDavUrl());
     settings.setValue(displayNameC(), folder.displayName());
-    settings.setValue(QLatin1String("paused"), folder.paused);
-    settings.setValue(QLatin1String("ignoreHiddenFiles"), folder.ignoreHiddenFiles);
+    settings.setValue(QStringLiteral("paused"), folder.paused);
+    settings.setValue(QStringLiteral("ignoreHiddenFiles"), folder.ignoreHiddenFiles);
     settings.setValue(deployedC(), folder.isDeployed());
 
     settings.setValue(QStringLiteral("virtualFilesMode"), Vfs::modeToString(folder.virtualFilesMode));
@@ -1343,20 +1343,20 @@ void FolderDefinition::save(QSettings &settings, const FolderDefinition &folder)
 
     // Happens only on Windows when the explorer integration is enabled.
     if (!folder.navigationPaneClsid.isNull())
-        settings.setValue(QLatin1String("navigationPaneClsid"), folder.navigationPaneClsid);
+        settings.setValue(QStringLiteral("navigationPaneClsid"), folder.navigationPaneClsid);
     else
-        settings.remove(QLatin1String("navigationPaneClsid"));
+        settings.remove(QStringLiteral("navigationPaneClsid"));
 }
 
 FolderDefinition FolderDefinition::load(QSettings &settings, const QByteArray &id)
 {
     FolderDefinition folder(id, settings.value(davUrlC()).toUrl(), settings.value(displayNameC()).toString());
-    folder.setLocalPath(settings.value(QLatin1String("localPath")).toString());
-    folder.journalPath = settings.value(QLatin1String("journalPath")).toString();
-    folder.setTargetPath(settings.value(QLatin1String("targetPath")).toString());
-    folder.paused = settings.value(QLatin1String("paused")).toBool();
-    folder.ignoreHiddenFiles = settings.value(QLatin1String("ignoreHiddenFiles"), QVariant(true)).toBool();
-    folder.navigationPaneClsid = settings.value(QLatin1String("navigationPaneClsid")).toUuid();
+    folder.setLocalPath(settings.value(QStringLiteral("localPath")).toString());
+    folder.journalPath = settings.value(QStringLiteral("journalPath")).toString();
+    folder.setTargetPath(settings.value(QStringLiteral("targetPath")).toString());
+    folder.paused = settings.value(QStringLiteral("paused")).toBool();
+    folder.ignoreHiddenFiles = settings.value(QStringLiteral("ignoreHiddenFiles"), QVariant(true)).toBool();
+    folder.navigationPaneClsid = settings.value(QStringLiteral("navigationPaneClsid")).toUuid();
     folder._deployed = settings.value(deployedC(), false).toBool();
 
     folder.virtualFilesMode = Vfs::Off;
@@ -1368,7 +1368,7 @@ FolderDefinition FolderDefinition::load(QSettings &settings, const QByteArray &i
             qCWarning(lcFolder) << "Unknown virtualFilesMode:" << vfsModeString << "assuming 'off'";
         }
     } else {
-        if (settings.value(QLatin1String("usePlaceholders")).toBool()) {
+        if (settings.value(QStringLiteral("usePlaceholders")).toBool()) {
             folder.virtualFilesMode = Vfs::WithSuffix;
             folder.upgradeVfsMode = true; // maybe winvfs is available?
         }

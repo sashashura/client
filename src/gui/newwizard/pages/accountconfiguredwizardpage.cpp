@@ -1,7 +1,10 @@
 #include "accountconfiguredwizardpage.h"
 #include "ui_accountconfiguredwizardpage.h"
 
-#include "theme.h"
+#include "gui/application.h"
+#include "gui/guiutility.h"
+#include "gui/settingsdialog.h"
+#include "libsync/theme.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -26,7 +29,7 @@ AccountConfiguredWizardPage::AccountConfiguredWizardPage(const QString &defaultS
 
     _ui->useVfsRadioButton->setText(tr("Use &virtual files instead of downloading content immediately"));
     if (vfsModeIsExperimental) {
-        _ui->useVfsRadioButton->setIcon(QIcon(QStringLiteral(":/client/resources/light/warning.svg")));
+        _ui->useVfsRadioButton->setIcon(Utility::getCoreIcon(QStringLiteral("warning")));
     }
 
     // just adjusting the visibility should be sufficient for these branding options
@@ -68,12 +71,10 @@ AccountConfiguredWizardPage::AccountConfiguredWizardPage(const QString &defaultS
     }
 
     connect(_ui->chooseLocalDirectoryButton, &QToolButton::clicked, this, [=]() {
-        auto dialog = new QFileDialog(this, tr("Select the local folder"), defaultSyncTargetDir);
+        auto dialog = new QFileDialog(ocApp()->gui()->settingsDialog(), tr("Select the local folder"), defaultSyncTargetDir);
+        Utility::setModal(dialog);
         dialog->setFileMode(QFileDialog::Directory);
         dialog->setOption(QFileDialog::ShowDirsOnly);
-
-        // this makes Qt use the native file dialog on Windows
-        dialog->setModal(true);
 
         connect(dialog, &QFileDialog::fileSelected, this, [this](const QString &directory) {
             // the directory chooser should guarantee that the directory exists
@@ -82,7 +83,7 @@ AccountConfiguredWizardPage::AccountConfiguredWizardPage(const QString &defaultS
             _ui->localDirectoryLineEdit->setText(QDir::toNativeSeparators(directory));
         });
 
-        dialog->show();
+        ocApp()->gui()->raiseDialog(dialog);
     });
 
     // this should be handled on application startup, too

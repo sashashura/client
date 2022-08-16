@@ -13,6 +13,8 @@
  */
 
 #include "guiutility.h"
+#include "application.h"
+#include "settingsdialog.h"
 
 #include <QClipboard>
 #include <QApplication>
@@ -148,7 +150,7 @@ bool Utility::openBrowser(const QUrl &url, QWidget *errorWidgetParent)
 
 bool Utility::openEmailComposer(const QString &subject, const QString &body, QWidget *errorWidgetParent)
 {
-    QUrl url(QLatin1String("mailto:"));
+    QUrl url(QStringLiteral("mailto:"));
     QUrlQuery query;
     query.setQueryItems({ { QLatin1String("subject"), subject },
         { QLatin1String("body"), body } });
@@ -207,4 +209,17 @@ QIcon Utility::getCoreIcon(const QString &icon_name)
     const QIcon icon(QStringLiteral(":/client/resources/%1/%2").arg(path, icon_name));
     Q_ASSERT(!icon.isNull());
     return icon;
+}
+
+
+void Utility::setModal(QWidget *w)
+{
+    // setting both sheet and explicitly modal
+    // can cause window stacking issues
+#ifdef Q_OS_MAC
+    w->setWindowFlags(Qt::Sheet);
+#else
+    w->setWindowModality(Qt::ApplicationModal);
+#endif
+    w->setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 }

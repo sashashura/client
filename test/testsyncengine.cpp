@@ -65,7 +65,7 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.remoteModifier().insert("A/a0");
+        fakeFolder.remoteModifier().insert(QStringLiteral("A/a0"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "A/a0"));
@@ -78,7 +78,7 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.localModifier().insert("A/a0");
+        fakeFolder.localModifier().insert(QStringLiteral("A/a0"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "A/a0"));
@@ -91,9 +91,9 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.remoteModifier().mkdir("Y");
-        fakeFolder.remoteModifier().mkdir("Z");
-        fakeFolder.remoteModifier().insert("Z/d0");
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("Y"));
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("Z"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Z/d0"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "Y"));
@@ -108,9 +108,9 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.localModifier().mkdir("Y");
-        fakeFolder.localModifier().mkdir("Z");
-        fakeFolder.localModifier().insert("Z/d0");
+        fakeFolder.localModifier().mkdir(QStringLiteral("Y"));
+        fakeFolder.localModifier().mkdir(QStringLiteral("Z"));
+        fakeFolder.localModifier().insert(QStringLiteral("Z/d0"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "Y"));
@@ -125,7 +125,7 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.remoteModifier().remove("A/a1");
+        fakeFolder.remoteModifier().remove(QStringLiteral("A/a1"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "A/a1"));
@@ -138,7 +138,7 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.localModifier().remove("A/a1");
+        fakeFolder.localModifier().remove(QStringLiteral("A/a1"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(itemDidCompleteSuccessfully(completeSpy, "A/a1"));
@@ -151,10 +151,10 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo {}, vfsMode, filesAreDehydrated);
         fakeFolder.account()->setCapabilities(TestUtils::testCapabilities(CheckSums::Algorithm::SHA1));
-        fakeFolder.localModifier().insert("a1.eml", 64, 'A');
-        fakeFolder.localModifier().insert("a2.eml", 64, 'A');
-        fakeFolder.localModifier().insert("a3.eml", 64, 'A');
-        fakeFolder.localModifier().insert("b3.txt", 64, 'A');
+        fakeFolder.localModifier().insert(QStringLiteral("a1.eml"), 64, 'A');
+        fakeFolder.localModifier().insert(QStringLiteral("a2.eml"), 64, 'A');
+        fakeFolder.localModifier().insert(QStringLiteral("a3.eml"), 64, 'A');
+        fakeFolder.localModifier().insert(QStringLiteral("b3.txt"), 64, 'A');
         // Upload and calculate the checksums
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
 
@@ -176,11 +176,11 @@ private slots:
 
         ItemCompletedSpy completeSpy(fakeFolder);
         // Touch the file without changing the content, shouldn't upload
-        fakeFolder.localModifier().setContents("a1.eml", 64, 'A');
+        fakeFolder.localModifier().setContents(QStringLiteral("a1.eml"), 'A');
         // Change the content/size
-        fakeFolder.localModifier().setContents("a2.eml", 64, 'B');
-        fakeFolder.localModifier().appendByte("a3.eml", 'X');
-        fakeFolder.localModifier().appendByte("b3.txt", 'X');
+        fakeFolder.localModifier().setContents(QStringLiteral("a2.eml"), 'B');
+        fakeFolder.localModifier().appendByte(QStringLiteral("a3.eml"));
+        fakeFolder.localModifier().appendByte(QStringLiteral("b3.txt"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
 
         QCOMPARE(getDbChecksum("a1.eml"), referenceChecksum);
@@ -229,9 +229,9 @@ private slots:
 
         // But touch local file before the next sync, such that the local folder
         // can't be removed
-        fakeFolder.localModifier().setContents("parentFolder/subFolderA/fileB.txt", FileModifier::DefaultFileSize, 'n');
-        fakeFolder.localModifier().setContents("parentFolder/subFolderA/subsubFolder/fileD.txt", FileModifier::DefaultFileSize, 'n');
-        fakeFolder.localModifier().setContents("parentFolder/subFolderA/anotherFolder/subsubFolder/fileF.txt", FileModifier::DefaultFileSize, 'n');
+        fakeFolder.localModifier().setContents(QStringLiteral("parentFolder/subFolderA/fileB.txt"), FileModifier::DefaultFileSize, 'n');
+        fakeFolder.localModifier().setContents(QStringLiteral("parentFolder/subFolderA/subsubFolder/fileD.txt"), FileModifier::DefaultFileSize, 'n');
+        fakeFolder.localModifier().setContents(QStringLiteral("parentFolder/subFolderA/anotherFolder/subsubFolder/fileF.txt"), FileModifier::DefaultFileSize, 'n');
 
         // Several follow-up syncs don't change the state at all,
         // in particular the remote state doesn't change and fileB.txt
@@ -264,10 +264,10 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo {}, vfsMode, filesAreDehydrated);
         QSignalSpy finishedSpy(&fakeFolder.syncEngine(), &SyncEngine::finished);
-        fakeFolder.serverErrorPaths().append("NewFolder");
-        fakeFolder.localModifier().mkdir("NewFolder");
+        fakeFolder.serverErrorPaths().append(QStringLiteral("NewFolder"));
+        fakeFolder.localModifier().mkdir(QStringLiteral("NewFolder"));
         // This should be aborted and would otherwise fail in FileInfo::create.
-        fakeFolder.localModifier().insert("NewFolder/NewFile", 'n');
+        fakeFolder.localModifier().insert(QStringLiteral("NewFolder/NewFile"), 'n');
 
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(finishedSpy.size(), 1);
@@ -282,9 +282,9 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo {}, vfsMode, filesAreDehydrated);
         QSignalSpy finishedSpy(&fakeFolder.syncEngine(), &SyncEngine::finished);
-        fakeFolder.serverErrorPaths().append("NewFolder/foo");
-        fakeFolder.remoteModifier().mkdir("NewFolder");
-        fakeFolder.remoteModifier().insert("NewFolder/foo");
+        fakeFolder.serverErrorPaths().append(QStringLiteral("NewFolder/foo"));
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("NewFolder"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("NewFolder/foo"));
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
         SyncJournalFileRecord rec;
@@ -300,20 +300,20 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         ItemCompletedSpy completeSpy(fakeFolder);
-        fakeFolder.remoteModifier().mkdir("Y");
-        fakeFolder.remoteModifier().mkdir("Y/Z");
-        fakeFolder.remoteModifier().insert("Y/Z/d0");
-        fakeFolder.remoteModifier().insert("Y/Z/d1");
-        fakeFolder.remoteModifier().insert("Y/Z/d2");
-        fakeFolder.remoteModifier().insert("Y/Z/d3");
-        fakeFolder.remoteModifier().insert("Y/Z/d4");
-        fakeFolder.remoteModifier().insert("Y/Z/d5");
-        fakeFolder.remoteModifier().insert("Y/Z/d6");
-        fakeFolder.remoteModifier().insert("Y/Z/d7");
-        fakeFolder.remoteModifier().insert("Y/Z/d8");
-        fakeFolder.remoteModifier().insert("Y/Z/d9");
-        fakeFolder.serverErrorPaths().append("Y/Z/d2", 503);
-        fakeFolder.serverErrorPaths().append("Y/Z/d3", 503);
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("Y"));
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("Y/Z"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d0"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d1"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d2"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d3"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d4"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d5"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d6"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d7"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d8"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("Y/Z/d9"));
+        fakeFolder.serverErrorPaths().append(QStringLiteral("Y/Z/d2"), 503);
+        fakeFolder.serverErrorPaths().append(QStringLiteral("Y/Z/d3"), 503);
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
         QCoreApplication::processEvents(); // should not crash
 
@@ -323,9 +323,9 @@ private slots:
             qDebug() << item->_file << item->isDirectory() << item->_status;
             QVERIFY(!seen.contains(item->_file)); // signal only sent once per item
             seen.insert(item->_file);
-            if (item->_file == "Y/Z/d2") {
+            if (item->_file == QLatin1String("Y/Z/d2")) {
                 QVERIFY(item->_status == SyncFileItem::NormalError);
-            } else if (item->_file == "Y/Z/d3") {
+            } else if (item->_file == QLatin1String("Y/Z/d3")) {
                 QVERIFY(item->_status != SyncFileItem::Success);
             } else if (!item->isDirectory()) {
                 QVERIFY(item->_status == SyncFileItem::Success);
@@ -392,13 +392,13 @@ private slots:
         mtime.setMSecsSinceEpoch(mtime.toMSecsSinceEpoch() / 1000 * 1000);
 
         const auto a1size = fakeFolder.currentLocalState().find("A/a1")->contentSize;
-        fakeFolder.localModifier().setContents("A/a1", a1size, 'C');
-        fakeFolder.localModifier().setModTime("A/a1", mtime);
-        fakeFolder.remoteModifier().setContents("A/a1", a1size, 'C');
+        fakeFolder.localModifier().setContents(QStringLiteral("A/a1"), a1size, 'C');
+        fakeFolder.localModifier().setModTime(QStringLiteral("A/a1"), mtime);
+        fakeFolder.remoteModifier().setContents(QStringLiteral("A/a1"), a1size, 'C');
         if (!sameMtime) {
             mtime = mtime.addDays(1);
         }
-        fakeFolder.remoteModifier().setModTime("A/a1", mtime);
+        fakeFolder.remoteModifier().setModTime(QStringLiteral("A/a1"), mtime);
         remoteInfo.find("A/a1")->checksums = checksums;
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(counter.nGET, expectedGET);
@@ -438,33 +438,33 @@ private slots:
 
         // Ensure the initial mtimes are as expected
         auto initialFileInfo = FileInfo::A12_B12_C12_S12();
-        initialFileInfo.setModTime("A/a1", initialMtime);
-        initialFileInfo.setModTime("B/b1", initialMtime);
-        initialFileInfo.setModTime("C/c1", initialMtime);
+        initialFileInfo.setModTime(QStringLiteral("A/a1"), initialMtime);
+        initialFileInfo.setModTime(QStringLiteral("B/b1"), initialMtime);
+        initialFileInfo.setModTime(QStringLiteral("C/c1"), initialMtime);
 
         FakeFolder fakeFolder(initialFileInfo, vfsMode, filesAreDehydrated);
 
         // upload a
-        fakeFolder.localModifier().appendByte("A/a1");
-        fakeFolder.localModifier().setModTime("A/a1", changedMtime);
+        fakeFolder.localModifier().appendByte(QStringLiteral("A/a1"));
+        fakeFolder.localModifier().setModTime(QStringLiteral("A/a1"), changedMtime);
         // download b
-        fakeFolder.remoteModifier().appendByte("B/b1");
-        fakeFolder.remoteModifier().setModTime("B/b1", changedMtime);
+        fakeFolder.remoteModifier().appendByte(QStringLiteral("B/b1"));
+        fakeFolder.remoteModifier().setModTime(QStringLiteral("B/b1"), changedMtime);
         // conflict c
-        fakeFolder.localModifier().appendByte("C/c1");
-        fakeFolder.localModifier().appendByte("C/c1");
-        fakeFolder.localModifier().setModTime("C/c1", changedMtime);
-        fakeFolder.remoteModifier().appendByte("C/c1");
-        fakeFolder.remoteModifier().setModTime("C/c1", changedMtime2);
+        fakeFolder.localModifier().appendByte(QStringLiteral("C/c1"));
+        fakeFolder.localModifier().appendByte(QStringLiteral("C/c1"));
+        fakeFolder.localModifier().setModTime(QStringLiteral("C/c1"), changedMtime);
+        fakeFolder.remoteModifier().appendByte(QStringLiteral("C/c1"));
+        fakeFolder.remoteModifier().setModTime(QStringLiteral("C/c1"), changedMtime2);
 
         connect(&fakeFolder.syncEngine(), &SyncEngine::aboutToPropagate, [&](const SyncFileItemSet &items) {
             SyncFileItemPtr a1, b1, c1;
             for (auto &item : items) {
-                if (item->_file == "A/a1")
+                if (item->_file == QLatin1String("A/a1"))
                     a1 = item;
-                if (item->_file == "B/b1")
+                if (item->_file == QLatin1String("B/b1"))
                     b1 = item;
-                if (item->_file == "C/c1")
+                if (item->_file == QLatin1String("C/c1"))
                     c1 = item;
             }
 
@@ -530,22 +530,22 @@ private slots:
             return nullptr;
         });
 
-        fakeFolder.localModifier().insert("A/big", 800);
+        fakeFolder.localModifier().insert(QStringLiteral("A/big"), 800);
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(nPUT, 1);
         QCOMPARE(n507, 0);
 
         nPUT = 0;
-        fakeFolder.localModifier().insert("A/big1", 500); // ok
-        fakeFolder.localModifier().insert("A/big2", 1200); // 507 (quota guess now 1199)
-        fakeFolder.localModifier().insert("A/big3", 1200); // skipped
-        fakeFolder.localModifier().insert("A/big4", 1500); // skipped
-        fakeFolder.localModifier().insert("A/big5", 1100); // 507 (quota guess now 1099)
-        fakeFolder.localModifier().insert("A/big6", 900); // ok (quota guess now 199)
-        fakeFolder.localModifier().insert("A/big7", 200); // skipped
-        fakeFolder.localModifier().insert("A/big8", 199); // ok (quota guess now 0)
+        fakeFolder.localModifier().insert(QStringLiteral("A/big1"), 500); // ok
+        fakeFolder.localModifier().insert(QStringLiteral("A/big2"), 1200); // 507 (quota guess now 1199)
+        fakeFolder.localModifier().insert(QStringLiteral("A/big3"), 1200); // skipped
+        fakeFolder.localModifier().insert(QStringLiteral("A/big4"), 1500); // skipped
+        fakeFolder.localModifier().insert(QStringLiteral("A/big5"), 1100); // 507 (quota guess now 1099)
+        fakeFolder.localModifier().insert(QStringLiteral("A/big6"), 900); // ok (quota guess now 199)
+        fakeFolder.localModifier().insert(QStringLiteral("A/big7"), 200); // skipped
+        fakeFolder.localModifier().insert(QStringLiteral("A/big8"), 199); // ok (quota guess now 0)
 
-        fakeFolder.localModifier().insert("B/big8", 1150); // 507
+        fakeFolder.localModifier().insert(QStringLiteral("B/big8"), 1150); // 507
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(nPUT, 6);
         QCOMPARE(n507, 3);
@@ -576,13 +576,13 @@ private slots:
         });
 
         // Basic case
-        fakeFolder.remoteModifier().create("A/a3", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a3"), 16, 'A');
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
 
         // Bad OC-Checksum
         checksumValue = "SHA1:bad";
-        fakeFolder.remoteModifier().create("A/a4", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a4"), 16, 'A');
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
         // Good OC-Checksum
@@ -594,7 +594,7 @@ private slots:
 
         // Bad Content-MD5
         contentMd5Value = "bad";
-        fakeFolder.remoteModifier().create("A/a5", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a5"), 16, 'A');
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
         // Good Content-MD5
@@ -606,10 +606,10 @@ private slots:
         // Invalid OC-Checksum is ignored
         checksumValue = "garbage";
         // contentMd5Value is still good
-        fakeFolder.remoteModifier().create("A/a6", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a6"), 16, 'A');
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         contentMd5Value = "bad";
-        fakeFolder.remoteModifier().create("A/a7", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a7"), 16, 'A');
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
         contentMd5Value.clear();
         fakeFolder.syncJournal().wipeErrorBlacklist();
@@ -618,7 +618,7 @@ private slots:
 
         // OC-Checksum contains Unsupported checksums
         checksumValue = "Unsupported:XXXX SHA1:invalid Invalid:XxX";
-        fakeFolder.remoteModifier().create("A/a8", 16, 'A');
+        fakeFolder.remoteModifier().create(QStringLiteral("A/a8"), 16, 'A');
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync()); // Since the supported SHA1 checksum is invalid, no download
         checksumValue =  "Unsupported:XXXX SHA1:19b1928d58a2030d08023f3d7054516dbc186f20 Invalid:XxX";
         fakeFolder.syncJournal().wipeErrorBlacklist();
@@ -635,7 +635,7 @@ private slots:
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
 
         if (!Utility::isWindows()) { // We can't have local file with these character
-            fakeFolder.localModifier().insert("A/\\:?*\"<>|.txt");
+            fakeFolder.localModifier().insert(QStringLiteral("A/\\:?*\"<>|.txt"));
             QVERIFY(fakeFolder.applyLocalModificationsAndSync());
             QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
         }
@@ -647,13 +647,13 @@ private slots:
         // Check that new servers also accept the capability
         auto invalidFilenameRegexCapabilities = [](const QString &regex) {
             auto cap = TestUtils::testCapabilities();
-            auto dav = cap["dav"].toMap();
+            auto dav = cap[QStringLiteral("dav")].toMap();
             dav.insert({ { "invalidFilenameRegex", regex } });
-            cap["dav"] = dav;
+            cap[QStringLiteral("dav")] = dav;
             return cap;
         };
-        fakeFolder.syncEngine().account()->setCapabilities(invalidFilenameRegexCapabilities("my[fgh]ile"));
-        fakeFolder.localModifier().insert("C/myfile.txt");
+        fakeFolder.syncEngine().account()->setCapabilities(invalidFilenameRegexCapabilities(QStringLiteral("my[fgh]ile")));
+        fakeFolder.localModifier().insert(QStringLiteral("C/myfile.txt"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(!fakeFolder.currentRemoteState().find("C/myfile.txt"));
     }
@@ -674,8 +674,8 @@ private slots:
         };
 
         fakeFolder.syncEngine().setIgnoreHiddenFiles(true);
-        fakeFolder.remoteModifier().insert("A/.hidden");
-        fakeFolder.localModifier().insert("B/.hidden");
+        fakeFolder.remoteModifier().insert(QStringLiteral("A/.hidden"));
+        fakeFolder.localModifier().insert(QStringLiteral("B/.hidden"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(!localFileExists("A/.hidden"));
         QVERIFY(!fakeFolder.currentRemoteState().find("B/.hidden"));
@@ -704,9 +704,9 @@ private slots:
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
 
         // Utf8 locale can sync both
-        fakeFolder.remoteModifier().insert("A/tößt");
-        fakeFolder.remoteModifier().insert("A/t𠜎t");
-        fakeFolder.remoteModifier().insert("A/💩");
+        fakeFolder.remoteModifier().insert(QStringLiteral("A/tößt"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("A/t𠜎t"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("A/💩"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(fakeFolder.currentLocalState().find("A/tößt"));
         QVERIFY(fakeFolder.currentLocalState().find("A/t𠜎t"));
@@ -719,8 +719,8 @@ private slots:
         QTextCodec::setCodecForLocale(codec);
         QCOMPARE(QTextCodec::codecForLocale()->mibEnum(), 111);
 
-        fakeFolder.remoteModifier().insert("B/tößt");
-        fakeFolder.remoteModifier().insert("B/t𠜎t");
+        fakeFolder.remoteModifier().insert(QStringLiteral("B/tößt"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("B/t𠜎t"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(fakeFolder.currentLocalState().find("B/tößt"));
         QVERIFY(!fakeFolder.currentLocalState().find("B/t𠜎t"));
@@ -738,7 +738,7 @@ private slots:
             QTextCodec::setCodecForLocale(codec);
             QCOMPARE(QTextCodec::codecForLocale()->mibEnum(), 3);
 
-            fakeFolder.remoteModifier().insert("C/tößt");
+            fakeFolder.remoteModifier().insert(QStringLiteral("C/tößt"));
             QVERIFY(fakeFolder.applyLocalModificationsAndSync());
             QVERIFY(!fakeFolder.currentLocalState().find("C/tößt"));
             QVERIFY(!fakeFolder.currentLocalState().find("C/t??t"));
@@ -767,7 +767,7 @@ private slots:
         fakeFolder.syncEngine().setSyncOptions(options);
         auto cap = TestUtils::testCapabilities();
         // unset chunking v1
-        cap.remove("dav");
+        cap.remove(QStringLiteral("dav"));
         fakeFolder.account()->setCapabilities(cap);
 
         QObject parent;
@@ -780,7 +780,7 @@ private slots:
             return nullptr;
         });
 
-        fakeFolder.localModifier().insert("file", 100, 'W');
+        fakeFolder.localModifier().insert(QStringLiteral("file"), 100, 'W');
         QTimer::singleShot(400, &fakeFolder.syncEngine(), [&]() { fakeFolder.syncEngine().abort(); });
         QVERIFY(!fakeFolder.applyLocalModificationsAndSync());
 
@@ -798,10 +798,10 @@ private slots:
         QFile::setPermissions(fakeFolder.localPath() + "A/a1", perm);
         QFile::setPermissions(fakeFolder.localPath() + "A/a2", perm);
         fakeFolder.applyLocalModificationsAndSync(); // get the metadata-only change out of the way
-        fakeFolder.remoteModifier().appendByte("A/a1");
-        fakeFolder.remoteModifier().appendByte("A/a2");
-        fakeFolder.localModifier().appendByte("A/a2");
-        fakeFolder.localModifier().appendByte("A/a2");
+        fakeFolder.remoteModifier().appendByte(QStringLiteral("A/a1"));
+        fakeFolder.remoteModifier().appendByte(QStringLiteral("A/a2"));
+        fakeFolder.localModifier().appendByte(QStringLiteral("A/a2"));
+        fakeFolder.localModifier().appendByte(QStringLiteral("A/a2"));
         fakeFolder.applyLocalModificationsAndSync(); // perms should be preserved
         QCOMPARE(QFileInfo(fakeFolder.localPath() + "A/a1").permissions(), perm);
         QCOMPARE(QFileInfo(fakeFolder.localPath() + "A/a2").permissions(), perm);
@@ -818,7 +818,7 @@ private slots:
         QFETCH_GLOBAL(bool, filesAreDehydrated);
 
         FakeFolder fakeFolder(FileInfo {}, vfsMode, filesAreDehydrated);
-        fakeFolder.remoteModifier().mkdir("foo");
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("foo"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(fakeFolder.currentLocalState(), fakeFolder.currentRemoteState());
@@ -834,8 +834,8 @@ private slots:
         QFETCH_GLOBAL(bool, filesAreDehydrated);
 
         FakeFolder fakeFolder(FileInfo {}, vfsMode, filesAreDehydrated);
-        fakeFolder.remoteModifier().mkdir("foo");
-        fakeFolder.remoteModifier().insert("foo/bar");
+        fakeFolder.remoteModifier().mkdir(QStringLiteral("foo"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("foo/bar"));
         auto datetime = QDateTime::currentDateTime();
         datetime.setSecsSinceEpoch(datetime.toSecsSinceEpoch()); // wipe ms
         fakeFolder.remoteModifier().find("foo")->setLastModified(datetime);

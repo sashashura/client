@@ -23,7 +23,7 @@ AboutDialog::AboutDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::AboutDialog)
 {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Utility::setModal(this);
     ui->setupUi(this);
     setWindowTitle(tr("About %1").arg(Theme::instance()->appNameGUI()));
     ui->aboutText->setText(Theme::instance()->about());
@@ -41,7 +41,7 @@ AboutDialog::~AboutDialog()
 
 void AboutDialog::openBrowser(const QString &s)
 {
-    Utility::openBrowser(s, this);
+    Utility::openBrowser(QUrl(s), this);
 }
 
 void AboutDialog::openBrowserFromUrl(const QUrl &s)

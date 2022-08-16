@@ -56,7 +56,8 @@
 
 #include "account.h"
 #include "askexperimentalvirtualfilesfeaturemessagebox.h"
-#include "askforoauthlogindialog.h"
+#include "loginrequireddialog.h"
+#include "oauthloginrequiredwidget.h"
 
 namespace OCC {
 
@@ -113,7 +114,6 @@ AccountSettings::AccountSettings(AccountStatePtr accountState, QWidget *parent)
     , ui(new Ui::AccountSettings)
     , _wasDisabledBefore(false)
     , _accountState(accountState)
-    , _quotaInfo(accountState)
 {
     ui->setupUi(this);
 
@@ -177,17 +177,22 @@ AccountSettings::AccountSettings(AccountStatePtr accountState, QWidget *parent)
     connect(FolderMan::instance(), &FolderMan::folderListChanged, _model, &FolderStatusModel::resetFolders);
     connect(this, &AccountSettings::folderChanged, _model, &FolderStatusModel::resetFolders);
 
-
-    QColor color = palette().highlight().color();
-    ui->quotaProgressBar->setStyleSheet(QString::fromLatin1(progressBarStyleC).arg(color.name()));
-
     ui->connectLabel->clear();
 
     connect(_accountState.data(), &AccountState::stateChanged, this, &AccountSettings::slotAccountStateChanged);
     slotAccountStateChanged();
 
-    connect(&_quotaInfo, &QuotaInfo::quotaUpdated,
-        this, &AccountSettings::slotUpdateQuota);
+    if (_accountState->supportsSpaces()) {
+        ui->quotaProgressBar->setVisible(false);
+        ui->quotaInfoLabel->setVisible(false);
+    } else {
+        QColor color = palette().highlight().color();
+        ui->quotaProgressBar->setStyleSheet(QString::fromLatin1(progressBarStyleC).arg(color.name()));
+
+        _quotaInfo = new QuotaInfo(_accountState, this);
+        connect(_quotaInfo, &QuotaInfo::quotaUpdated,
+            this, &AccountSettings::slotUpdateQuota);
+    }
 }
 
 
@@ -294,16 +299,18 @@ void AccountSettings::slotCustomContextMenuRequested(const QPoint &pos)
     // Add an action to open the folder on the server in a webbrowser:
 
     if (auto info = _model->infoForIndex(index)) {
-        QString path = info->_folder->remotePathTrailingSlash();
-        if (classification == FolderStatusModel::SubFolder) {
-            // Only add the path of subfolders, because the remote path is the path of the root folder.
-            path += info->_path;
-        }
-        menu->addAction(CommonStrings::showInWebBrowser(), [path, davUrl = info->_folder->webDavUrl(), this] {
-            fetchPrivateLinkUrl(_accountState->account(), davUrl, path, this, [](const QString &url) {
-                Utility::openBrowser(url, nullptr);
+        if (info->_folder->accountState()->account()->capabilities().privateLinkPropertyAvailable()) {
+            QString path = info->_folder->remotePathTrailingSlash();
+            if (classification == FolderStatusModel::SubFolder) {
+                // Only add the path of subfolders, because the remote path is the path of the root folder.
+                path += info->_path;
+            }
+            menu->addAction(CommonStrings::showInWebBrowser(), [path, davUrl = info->_folder->webDavUrl(), this] {
+                fetchPrivateLinkUrl(_accountState->account(), davUrl, path, this, [](const QUrl &url) {
+                    Utility::openBrowser(url, nullptr);
+                });
             });
-        });
+        }
     }
 
     // For sub-folders we're now done.
@@ -612,9 +619,9 @@ void AccountSettings::slotDisableVfsCurrentFolder()
 
 void AccountSettings::showConnectionLabel(const QString &message, QStringList errors)
 {
-    const QString errStyle = QLatin1String("color:#ffffff; background-color:#bb4d4d;padding:5px;"
-                                           "border-width: 1px; border-style: solid; border-color: #aaaaaa;"
-                                           "border-radius:5px;");
+    const QString errStyle = QStringLiteral("color:#ffffff; background-color:#bb4d4d;padding:5px;"
+                                            "border-width: 1px; border-style: solid; border-color: #aaaaaa;"
+                                            "border-radius:5px;");
     if (errors.isEmpty()) {
         ui->connectLabel->setText(message);
         ui->connectLabel->setToolTip(QString());
@@ -755,7 +762,7 @@ void AccountSettings::slotAccountStateChanged()
             _model->slotUpdateFolderState(folder);
         }
 
-        const QString server = QString::fromLatin1("<a href=\"%1\">%2</a>")
+        const QString server = QStringLiteral("<a href=\"%1\">%2</a>")
                                    .arg(Utility::escape(account->url().toString()),
                                        Utility::escape(safeUrl.toString()));
         QString serverWithUser = server;
@@ -798,7 +805,8 @@ void AccountSettings::slotAccountStateChanged()
 
                 qCDebug(lcAccountSettings) << "showing modal dialog asking user to log in again via OAuth2";
 
-                _askForOAuthLoginDialog = new AskForOAuthLoginDialog(_accountState->account(), ocApp()->gui()->settingsDialog());
+                auto *contentWidget = new OAuthLoginRequiredWidget(account);
+                _askForOAuthLoginDialog = new LoginRequiredDialog(contentWidget, ocApp()->gui()->settingsDialog());
 
                 // make sure it's cleaned up since it's not owned by the account settings (also prevents memory leaks)
                 _askForOAuthLoginDialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -808,7 +816,7 @@ void AccountSettings::slotAccountStateChanged()
                     this, &AccountSettings::slotAccountStateChanged,
                     Qt::UniqueConnection);
 
-                connect(_askForOAuthLoginDialog, &AskForOAuthLoginDialog::rejected, this, [this]() {
+                connect(_askForOAuthLoginDialog, &LoginRequiredDialog::rejected, [this]() {
                     // if a user dismisses the dialog, we have no choice but signing them out
                     _accountState->signOutByUi();
                 });
@@ -872,7 +880,7 @@ void AccountSettings::slotLinkActivated(const QString &link)
 {
     // Parse folder alias and filename from the link, calculate the index
     // and select it if it exists.
-    const QStringList li = link.split(QLatin1String("?folder="));
+    const QStringList li = link.split(QStringLiteral("?folder="));
     if (li.count() > 1) {
         QString myFolder = li[0];
         const QByteArray id = QUrl::fromPercentEncoding(li[1].toUtf8()).toUtf8();
@@ -928,13 +936,13 @@ void AccountSettings::refreshSelectiveSyncStatus()
                 msg += QLatin1String(", ");
             }
             QString myFolder = (it);
-            if (myFolder.endsWith('/')) {
+            if (myFolder.endsWith(QLatin1Char('/'))) {
                 myFolder.chop(1);
             }
             QModelIndex theIndx = _model->indexForPath(folder, myFolder);
             if (theIndx.isValid()) {
-                msg += QString::fromLatin1("<a href=\"%1?folder=%2\">%1</a>")
-                           .arg(Utility::escape(myFolder), QUrl::toPercentEncoding(folder->id()));
+                msg += QStringLiteral("<a href=\"%1?folder=%2\">%1</a>")
+                           .arg(Utility::escape(myFolder), QString::fromUtf8(QUrl::toPercentEncoding(QString::fromUtf8(folder->id()))));
             } else {
                 msg += myFolder; // no link because we do not know the index yet.
             }
@@ -1016,7 +1024,9 @@ void AccountSettings::slotDeleteAccount()
 bool AccountSettings::event(QEvent *e)
 {
     if (e->type() == QEvent::Hide || e->type() == QEvent::Show) {
-        _quotaInfo.setActive(isVisible());
+        if (_quotaInfo) {
+            _quotaInfo->setActive(isVisible());
+        }
     }
     if (e->type() == QEvent::Show) {
         // Expand the folder automatically only if there's only one, see #4283

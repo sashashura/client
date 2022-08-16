@@ -50,11 +50,11 @@ private slots:
         connect(&fakeFolder.syncEngine(), &SyncEngine::finished, &tracker, &LocalDiscoveryTracker::slotSyncFinished);
 
         // More subdirectories are useful for testing
-        fakeFolder.localModifier().mkdir("A/X");
-        fakeFolder.localModifier().mkdir("A/Y");
-        fakeFolder.localModifier().insert("A/X/x1");
-        fakeFolder.localModifier().insert("A/Y/y1");
-        tracker.addTouchedPath("A/X");
+        fakeFolder.localModifier().mkdir(QStringLiteral("A/X"));
+        fakeFolder.localModifier().mkdir(QStringLiteral("A/Y"));
+        fakeFolder.localModifier().insert(QStringLiteral("A/X/x1"));
+        fakeFolder.localModifier().insert(QStringLiteral("A/Y/y1"));
+        tracker.addTouchedPath(QStringLiteral("A/X"));
 
         tracker.startSyncFullDiscovery();
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
@@ -63,13 +63,13 @@ private slots:
         QVERIFY(tracker.localDiscoveryPaths().empty());
 
         // Test begins
-        fakeFolder.localModifier().insert("A/a3");
-        fakeFolder.localModifier().insert("A/X/x2");
-        fakeFolder.localModifier().insert("A/Y/y2");
-        fakeFolder.localModifier().insert("B/b3");
-        fakeFolder.remoteModifier().insert("C/c3");
-        fakeFolder.remoteModifier().appendByte("C/c1");
-        tracker.addTouchedPath("A/X");
+        fakeFolder.localModifier().insert(QStringLiteral("A/a3"));
+        fakeFolder.localModifier().insert(QStringLiteral("A/X/x2"));
+        fakeFolder.localModifier().insert(QStringLiteral("A/Y/y2"));
+        fakeFolder.localModifier().insert(QStringLiteral("B/b3"));
+        fakeFolder.remoteModifier().insert(QStringLiteral("C/c3"));
+        fakeFolder.remoteModifier().appendByte(QStringLiteral("C/c1"));
+        tracker.addTouchedPath(QStringLiteral("A/X"));
 
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
@@ -152,13 +152,13 @@ private slots:
             return tracker.localDiscoveryPaths().find(path) != tracker.localDiscoveryPaths().end();
         };
 
-        tracker.addTouchedPath("A/spurious");
+        tracker.addTouchedPath(QStringLiteral("A/spurious"));
 
-        fakeFolder.localModifier().insert("A/a3");
-        tracker.addTouchedPath("A/a3");
+        fakeFolder.localModifier().insert(QStringLiteral("A/a3"));
+        tracker.addTouchedPath(QStringLiteral("A/a3"));
 
-        fakeFolder.localModifier().insert("A/a4");
-        fakeFolder.serverErrorPaths().append("A/a4");
+        fakeFolder.localModifier().insert(QStringLiteral("A/a4"));
+        fakeFolder.serverErrorPaths().append(QStringLiteral("A/a4"));
         // We're not adding a4 as touched, it's in the same folder as a3 and will be seen.
         // And due to the error it should be added to the explicit list while a3 gets removed.
 
@@ -182,7 +182,7 @@ private slots:
 
         fakeFolder.serverErrorPaths().clear();
         fakeFolder.syncJournal().wipeErrorBlacklist();
-        tracker.addTouchedPath("A/newspurious"); // will be removed due to successful sync
+        tracker.addTouchedPath(QStringLiteral("A/newspurious")); // will be removed due to successful sync
 
         fakeFolder.syncEngine().setLocalDiscoveryOptions(LocalDiscoveryStyle::DatabaseAndFilesystem, tracker.localDiscoveryPaths());
         tracker.startSyncPartialDiscovery();
@@ -199,9 +199,9 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
 
-        fakeFolder.localModifier().mkdir("A/newDir");
-        fakeFolder.localModifier().mkdir("A/newDir/subDir");
-        fakeFolder.localModifier().insert("A/newDir/subDir/file", 10);
+        fakeFolder.localModifier().mkdir(QStringLiteral("A/newDir"));
+        fakeFolder.localModifier().mkdir(QStringLiteral("A/newDir/subDir"));
+        fakeFolder.localModifier().insert(QStringLiteral("A/newDir/subDir/file"), 10);
 
         // Only "A" was modified according to the file system tracker
         fakeFolder.syncEngine().setLocalDiscoveryOptions(
@@ -226,10 +226,10 @@ private slots:
         auto cap = TestUtils::testCapabilities();
         cap.insert({ { "files", QVariantMap { { "blacklisted_files", QVariantList { ".foo", "bar" } } } } });
         fakeFolder.account()->setCapabilities(cap);
-        fakeFolder.localModifier().insert("C/.foo");
-        fakeFolder.localModifier().insert("C/bar");
-        fakeFolder.localModifier().insert("C/moo");
-        fakeFolder.localModifier().insert("C/.moo");
+        fakeFolder.localModifier().insert(QStringLiteral("C/.foo"));
+        fakeFolder.localModifier().insert(QStringLiteral("C/bar"));
+        fakeFolder.localModifier().insert(QStringLiteral("C/moo"));
+        fakeFolder.localModifier().insert(QStringLiteral("C/.moo"));
 
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QVERIFY(fakeFolder.currentRemoteState().find("C/moo"));

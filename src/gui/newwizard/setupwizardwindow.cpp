@@ -2,6 +2,7 @@
 #include "ui_setupwizardwindow.h"
 
 #include "gui/application.h"
+#include "gui/guiutility.h"
 #include "gui/owncloudgui.h"
 #include "gui/settingsdialog.h"
 #include "theme.h"
@@ -29,11 +30,11 @@ namespace OCC::Wizard {
 
 Q_LOGGING_CATEGORY(lcSetupWizardWindow, "setupwizard.window")
 
-SetupWizardWindow::SetupWizardWindow(QWidget *parent)
+SetupWizardWindow::SetupWizardWindow(SettingsDialog *parent)
     : QDialog(parent)
     , _ui(new ::Ui::SetupWizardWindow)
 {
-    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+    Utility::setModal(this);
 
     _ui->setupUi(this);
 

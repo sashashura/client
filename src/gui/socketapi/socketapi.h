@@ -71,9 +71,9 @@ private slots:
     void slotNewConnection();
     void slotReadSocket();
 
-    static void copyUrlToClipboard(const QString &link);
-    static void emailPrivateLink(const QString &link);
-    static void openPrivateLink(const QString &link);
+    static void copyUrlToClipboard(const QUrl &link);
+    static void emailPrivateLink(const QUrl &link);
+    static void openPrivateLink(const QUrl &link);
 
 private:
     // Helper structure for getting information on a file
@@ -127,7 +127,6 @@ private:
 
     // External sync
     Q_INVOKABLE void command_V2_LIST_ACCOUNTS(const QSharedPointer<SocketApiJobV2> &job) const;
-    Q_INVOKABLE void command_V2_UPLOAD_FILES_FROM(const QSharedPointer<SocketApiJobV2> &job) const;
 
     // Sends the id and the client icon as PNG image (base64 encoded) in Json key "png"
     // e.g. { "id" : "1", "arguments" : { "png" : "hswehs343dj8..." } } or an error message in key "error"
@@ -137,7 +136,7 @@ private:
     Q_INVOKABLE void command_V2_GET_CLIENT_ICON(const QSharedPointer<SocketApiJobV2> &job) const;
 
     // Fetch the private link and call targetFun
-    void fetchPrivateLinkUrlHelper(const QString &localFile, const std::function<void(const QString &url)> &targetFun);
+    void fetchPrivateLinkUrlHelper(const QString &localFile, const std::function<void(const QUrl &url)> &targetFun);
 
     /** Sends translated/branded strings that may be useful to the integration */
     Q_INVOKABLE void command_GET_STRINGS(const QString &argument, SocketListener *listener);

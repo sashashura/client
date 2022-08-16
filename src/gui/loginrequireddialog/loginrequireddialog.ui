@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AskForOAuthLoginDialog</class>
- <widget class="QDialog" name="AskForOAuthLoginDialog">
+ <class>LoginRequiredDialog</class>
+ <widget class="QDialog" name="LoginRequiredDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>435</width>
+    <width>445</width>
     <height>135</height>
    </rect>
   </property>
@@ -19,9 +19,9 @@
   <property name="windowTitle">
    <string>Login required</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
+  <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,1">
      <item>
       <widget class="QLabel" name="iconLabel">
        <property name="sizePolicy">
@@ -36,28 +36,34 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label">
-       <property name="minimumSize">
-        <size>
-         <width>300</width>
-         <height>50</height>
-        </size>
-       </property>
-       <property name="text">
-        <string notr="true">The account has been logged out [...] &lt;placeholder&gt;</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignHCenter|Qt::AlignTop</set>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
+      <widget class="QStackedWidget" name="contentWidget">
+       <widget class="QWidget" name="page"/>
+       <widget class="QWidget" name="page_2"/>
       </widget>
      </item>
     </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QDialogButtonBox" name="leftButtonBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>10</width>
+         <height>10</height>
+        </size>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::NoButton</set>
+       </property>
+      </widget>
+     </item>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -72,26 +78,21 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="openBrowserButton">
-       <property name="enabled">
-        <bool>false</bool>
+      <widget class="QDialogButtonBox" name="rightButtonBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="text">
-        <string>Open browser</string>
+       <property name="minimumSize">
+        <size>
+         <width>10</width>
+         <height>10</height>
+        </size>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="copyUrlToClipboardButton">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Copy URL to clipboard</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../resources/client.qrc">
-         <normaloff>:/client/resources/light/clipboard.svg</normaloff>:/client/resources/light/clipboard.svg</iconset>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::NoButton</set>
        </property>
       </widget>
      </item>
@@ -100,7 +101,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../resources/client.qrc"/>
+  <include location="../../resources/client.qrc"/>
  </resources>
  <connections/>
 </ui>
