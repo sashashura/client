@@ -49,7 +49,6 @@ LoginRequiredDialog::LoginRequiredDialog(AbstractLoginRequiredWidget *contentWid
     _ui->contentWidget->setCurrentWidget(contentWidget);
 
     Utility::setModal(this);
-    setFixedSize(this->sizeHint());
 }
 
 LoginRequiredDialog::~LoginRequiredDialog()

@@ -54,7 +54,11 @@ public:
      */
     void askFromUser() override;
 
-    static QString requestAppPasswordText(const Account *account);
+    /**
+     * Reset OAuth object and restart authorization process.
+     */
+    void restartOAuth();
+
 private slots:
     void asyncAuthResult(OAuth::Result, const QString &user, const QString &accessToken, const QString &refreshToken, const QString &displayName);
     void showDialog();
@@ -64,7 +68,7 @@ signals:
     void authorisationLinkChanged();
 
 private:
-    QScopedPointer<OAuth, QScopedPointerObjectDeleteLater<OAuth>> _asyncAuth;
+    QScopedPointer<AccountBasedOAuth, QScopedPointerObjectDeleteLater<AccountBasedOAuth>> _asyncAuth;
 };
 
 } // namespace OCC

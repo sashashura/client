@@ -36,6 +36,12 @@ public:
 
     QList<QPair<QAbstractButton *, QDialogButtonBox::ButtonRole>> buttons() override;
 
+    void showErrorLabelAndRetryButton();
+    void hideErrorLabelAndRetryButton();
+
+Q_SIGNALS:
+    void retryButtonClicked();
+
 private:
     ::Ui::OAuthLoginRequiredWidget *_ui;
 

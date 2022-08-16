@@ -52,6 +52,24 @@ OAuthLoginRequiredWidget::OAuthLoginRequiredWidget(AccountPtr accountPtr, QWidge
         auto link = qobject_cast<HttpCredentialsGui *>(accountPtr->credentials())->authorisationLink().toString();
         ocApp()->clipboard()->setText(link);
     });
+
+    _ui->errorFrame->hide();
+    connect(_ui->retryButton, &QPushButton::clicked, this, [this]() {
+        hideErrorLabelAndRetryButton();
+        Q_EMIT OAuthLoginRequiredWidget::retryButtonClicked();
+    });
+
+    connect(_ui->retryButton, &QPushButton::clicked, this, [this, accountPtr]() {
+        auto creds = qobject_cast<HttpCredentialsGui *>(accountPtr->credentials());
+        creds->restartOAuth();
+        _ui->errorFrame->hide();
+    });
+
+    connect(creds, &HttpCredentialsGui::asked, this, [this, creds]() {
+        if (!creds->ready()) {
+            showErrorLabelAndRetryButton();
+        }
+    });
 }
 
 OAuthLoginRequiredWidget::~OAuthLoginRequiredWidget()
@@ -67,4 +85,25 @@ QList<QPair<QAbstractButton *, QDialogButtonBox::ButtonRole>> OAuthLoginRequired
     };
 }
 
+void OAuthLoginRequiredWidget::showErrorLabelAndRetryButton()
+{
+    _ui->errorFrame->show();
+
+    // apparently, we need to run this in the main event loop since the buttons are owned by the layout within the login required dialog
+    QTimer::singleShot(0, [this]() {
+        _openBrowserButton->setEnabled(false);
+        _copyURLToClipboardButton->setEnabled(false);
+    });
+}
+
+void OAuthLoginRequiredWidget::hideErrorLabelAndRetryButton()
+{
+    _ui->errorFrame->hide();
+
+    // apparently, we need to run this in the main event loop since the buttons are owned by the layout within the login required dialog
+    QTimer::singleShot(0, [this]() {
+        _openBrowserButton->setEnabled(true);
+        _copyURLToClipboardButton->setEnabled(true);
+    });
+}
 }
