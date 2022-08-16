@@ -125,12 +125,6 @@ void HttpCredentialsGui::showDialog()
     ownCloudGui::raiseDialog(dialog);
 }
 
-QString HttpCredentialsGui::requestAppPasswordText(const Account *account)
-{
-    return tr("<a href=\"%1\">Click here</a> to request an app password from the web interface.")
-        .arg(Utility::concatUrlPath(account->url(), QStringLiteral("/index.php/settings/personal?sectionid=security#apppasswords")).toString());
-}
-
 QUrl HttpCredentialsGui::authorisationLink() const
 {
     OC_ASSERT(isUsingOAuth());
