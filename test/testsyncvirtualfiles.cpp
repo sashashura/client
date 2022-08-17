@@ -1142,7 +1142,7 @@ private slots:
 
         // When a folder is renamed, the pin states inside should be retained
         fakeFolder.localModifier().rename(QStringLiteral("online"), QStringLiteral("onlinerenamed1"));
-        QVERIFY(fakeFolder.syncOnce());
+        QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(*vfs->pinState("onlinerenamed1"), PinState::OnlineOnly);
         QCOMPARE(*vfs->pinState("onlinerenamed1/file1rename"), PinState::Unspecified);
 
@@ -1157,7 +1157,7 @@ private slots:
         // state isn't preserved.
         QCOMPARE(*vfs->pinState("onlinerenamed2/file1rename"), PinState::Unspecified);
         fakeFolder.remoteModifier().remove(QStringLiteral("onlinerenamed2/file1rename"));
-        QVERIFY(fakeFolder.syncOnce());
+        QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         QCOMPARE(*vfs->pinState("onlinerenamed2/file1rename"), PinState::OnlineOnly);
         fakeFolder.remoteModifier().insert(QStringLiteral("onlinerenamed2/file1rename"));
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());

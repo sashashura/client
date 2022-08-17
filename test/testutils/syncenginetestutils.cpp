@@ -47,9 +47,6 @@ void DiskFileModifier::remove(const QString &relativePath)
 void DiskFileModifier::insert(const QString &relativePath, quint64 size, char contentChar)
 {
     _processArguments.append({ "insert", relativePath, QString::number(size), QChar::fromLatin1(contentChar) });
-    // TODO: EV: Is the following true?
-    //    // Set the mtime 30 seconds in the past, for some tests that need to make sure that the mtime differs.
-    //    setModTime(relativePath, QDateTime::currentDateTimeUtc().addSecs(-30));
 }
 
 void DiskFileModifier::setContents(const QString &relativePath, quint64 newSize, char contentChar)

@@ -176,11 +176,11 @@ private slots:
 
         ItemCompletedSpy completeSpy(fakeFolder);
         // Touch the file without changing the content, shouldn't upload
-        fakeFolder.localModifier().setContents(QStringLiteral("a1.eml"), 'A');
+        fakeFolder.localModifier().setContents(QStringLiteral("a1.eml"), 64, 'A');
         // Change the content/size
-        fakeFolder.localModifier().setContents(QStringLiteral("a2.eml"), 'B');
-        fakeFolder.localModifier().appendByte(QStringLiteral("a3.eml"));
-        fakeFolder.localModifier().appendByte(QStringLiteral("b3.txt"));
+        fakeFolder.localModifier().setContents(QStringLiteral("a2.eml"), 64, 'B');
+        fakeFolder.localModifier().appendByte(QStringLiteral("a3.eml"), 'X');
+        fakeFolder.localModifier().appendByte(QStringLiteral("b3.txt"), 'X');
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
 
         QCOMPARE(getDbChecksum("a1.eml"), referenceChecksum);

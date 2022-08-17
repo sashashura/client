@@ -162,7 +162,7 @@ private slots:
             QVERIFY(getItem(completeSpy, "A/broken")->_errorString.contains(serverMessage));
         }
     }
-#endif
+
     void serverMaintenence() {
         // Server in maintenance must abort the sync.
 
@@ -193,7 +193,7 @@ private slots:
             QVERIFY(getItem(completeSpy, "A/broken")->_errorString.contains("System in maintenance mode"));
         }
     }
-
+#endif
     void testMoveFailsInAConflict() {
 #ifdef Q_OS_WIN
         QSKIP("Not run on windows because permission on directory does not do what is expected");
@@ -209,8 +209,10 @@ private slots:
 
         FakeFolder fakeFolder(FileInfo::A12_B12_C12_S12(), vfsMode, filesAreDehydrated);
         fakeFolder.syncEngine().setIgnoreHiddenFiles(true);
+        fakeFolder.account()->setCapabilities(TestUtils::testCapabilities(CheckSums::Algorithm::ADLER32));
         fakeFolder.remoteModifier().setContents(QStringLiteral("A/a1"), FileModifier::DefaultFileSize, 'A');
         fakeFolder.localModifier().setContents(QStringLiteral("A/a1"), FileModifier::DefaultFileSize, 'B');
+        QVERIFY(fakeFolder.applyLocalModificationsWithoutSync());
 
         bool propConnected = false;
         QString conflictFile;
@@ -230,7 +232,11 @@ private slots:
                     // Check that the temporary file is still there
                     QCOMPARE(QDir(fakeFolder.localPath() + "A/").entryList({"*.~*"}, QDir::Files | QDir::Hidden).count(), 1);
                     // Set the permission to read only on the folder, so the rename of the temporary file will fail
-                    QFile(fakeFolder.localPath() + "A/").setPermissions(QFile::Permissions(0x5555));
+                    QFile folderA(fakeFolder.localPath() + "A/");
+                    QVERIFY(folderA.setPermissions(QFile::Permissions(0x5555)));
+                    // For some reason, on some linux system the setPermissions above succeeds, but the directory is still 755.
+                    // So double check it here, otherwise the move will succeed, and the sync will succeed (while it should fail).
+                    QCOMPARE(folderA.permissions(), QFile::Permissions(0x5555));
                 }
             });
         });

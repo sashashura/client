@@ -951,10 +951,6 @@ private slots:
             QCOMPARE(localState, remoteState);
         }
 
-        fakeFolder.localModifier().mkdir("B");
-        fakeFolder.localModifier().rename("A/file", "B/file");
-        fakeFolder.localModifier().remove("A");
-        QVERIFY(fakeFolder.applyLocalModificationsAndSync());
         fakeFolder.localModifier().mkdir(QStringLiteral("B"));
         fakeFolder.localModifier().rename(QStringLiteral("A/file"), QStringLiteral("B/file"));
         fakeFolder.localModifier().remove(QStringLiteral("A"));
