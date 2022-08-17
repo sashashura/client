@@ -487,7 +487,6 @@ private slots:
         // we will get  OCC::SyncFileItem::Message and error: "Local file changed during sync. It will be resumed."
         // so a message but we report a successful sync
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
-        qDebug()<<"******** First sync done";
         QThread::sleep(1);
 
         // There should be a followup sync

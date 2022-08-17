@@ -158,7 +158,7 @@ private slots:
         // Upload and calculate the checksums
         QVERIFY(fakeFolder.applyLocalModificationsAndSync());
 
-        auto getDbChecksum = [&](QString path) {
+        auto getDbChecksum = [&](const QString &path) {
             SyncJournalFileRecord record;
             fakeFolder.syncJournal().getFileRecord(path, &record);
             return record._checksumHeader;
@@ -669,7 +669,7 @@ private slots:
 
         // We can't depend on currentLocalState for hidden files since
         // it should rightfully skip things like download temporaries
-        auto localFileExists = [&](QString name) {
+        auto localFileExists = [&](const QString &name) {
             return QFileInfo::exists(fakeFolder.localPath() + name);
         };
 

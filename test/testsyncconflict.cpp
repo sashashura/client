@@ -52,7 +52,7 @@ QStringList findConflicts(const FileInfo &dir)
     return conflicts;
 }
 
-bool expectAndWipeConflict(FakeFolder &fFolder, const QString path)
+bool expectAndWipeConflict(FakeFolder &fFolder, const QString &path)
 {
     PathComponents pathComponents(path);
     auto localState = fFolder.currentLocalState();

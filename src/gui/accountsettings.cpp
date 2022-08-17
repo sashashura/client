@@ -109,7 +109,7 @@ protected:
     }
 };
 
-AccountSettings::AccountSettings(AccountStatePtr accountState, QWidget *parent)
+AccountSettings::AccountSettings(const AccountStatePtr &accountState, QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::AccountSettings)
     , _wasDisabledBefore(false)
@@ -831,9 +831,9 @@ void AccountSettings::slotAccountStateChanged()
             break;
         }
         case AccountState::NetworkError:
+            // don't display the error to the user, https://github.com/owncloud/client/issues/9790
             showConnectionLabel(tr("No connection to %1.")
-                                    .arg(server),
-                _accountState->connectionErrors());
+                                    .arg(server));
             break;
         case AccountState::ConfigurationError:
             showConnectionLabel(tr("Server configuration error: %1.")
