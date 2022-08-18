@@ -26,6 +26,7 @@
 #include "creds/abstractcredentials.h"
 #include "networkjobs.h"
 #include "networkjobs/checkserverjobfactory.h"
+#include "networkjobs/jobgroup.h"
 #include "networkjobs/jsonjob.h"
 #include "theme.h"
 #include "tlserrordialog.h"
@@ -281,18 +282,33 @@ void ConnectionValidator::fetchUser()
         // it's not the case, the code below will assume that they are not available.
         Q_ASSERT(capabilities.isValid());
 
-#ifndef TOKEN_AUTH_ONLY
-        if (capabilities.isValid() && capabilities.avatarsAvailable()) {
-            auto *job = new AvatarJob(_account, _account->davUser(), 128, this);
-            job->setAuthenticationJob(true);
-            job->setTimeout(20s);
-            QObject::connect(job, &AvatarJob::avatarPixmap, this, &ConnectionValidator::slotAvatarImage);
-            job->start();
-            // reportResult will be called when the avatar has been received by `slotAvatarImage`
-        } else
-#endif
-        {
+        auto pool = new JobGroup(this);
+        if (capabilities.isValid()) {
+            if (capabilities.avatarsAvailable()) {
+                auto *job = pool->createJob<AvatarJob>(_account, _account->davUser(), 128, this);
+                job->setAuthenticationJob(true);
+                job->setTimeout(20s);
+                connect(job, &AvatarJob::avatarPixmap, this, [this](const QPixmap &img) {
+                    _account->setAvatar(img);
+                });
+                job->start();
+            }
+            if (capabilities.appProviders().enabled) {
+                auto *job = pool->createJob<JsonJob>(_account, _account->url(), capabilities.appProviders().appsUrl, "GET");
+                connect(job, &JsonApiJob::finishedSignal, this, [job, this] {
+                    _account->setAppProvider(AppProvider { job->data() });
+                });
+                job->start();
+            }
+        }
+        if (pool->isEmpty()) {
+            pool->deleteLater();
             reportResult(Connected);
+        } else {
+            connect(pool, &JobGroup::finishedSignal, this, [pool, this] {
+                pool->deleteLater();
+                reportResult(Connected);
+            });
         }
     });
     job->start();
@@ -320,14 +336,6 @@ bool ConnectionValidator::checkServerInfo()
     }
     return true;
 }
-
-#ifndef TOKEN_AUTH_ONLY
-void ConnectionValidator::slotAvatarImage(const QPixmap &img)
-{
-    _account->setAvatar(img);
-    reportResult(Connected);
-}
-#endif
 
 void ConnectionValidator::reportResult(Status status)
 {

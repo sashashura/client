@@ -1,0 +1,5 @@
+Change: Add open in web editor
+
+We now provide the option to open files in an online office suit, from the local file browser context menu, if the server does support it.
+
+https://github.com/owncloud/client/issues/9724
