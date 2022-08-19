@@ -210,7 +210,7 @@ def build_client(c_compiler, cxx_compiler, build_type, generator, build_command,
     return [
         {
             "name": "generate",
-            "image": OC_CI_CLIENT,
+            "image": "sawjan/client-fedora",
             "environment": {
                 "LC_ALL": "C.UTF-8",
             },
@@ -222,7 +222,7 @@ def build_client(c_compiler, cxx_compiler, build_type, generator, build_command,
         },
         {
             "name": build_command,
-            "image": OC_CI_CLIENT,
+            "image": "sawjan/client-fedora",
             "environment": {
                 "LC_ALL": "C.UTF-8",
             },
@@ -253,7 +253,7 @@ def unit_tests(build_dir, depends_on = []):
 def gui_tests(squish_parameters = "", depends_on = []):
     return [{
         "name": "GUItests",
-        "image": OC_CI_SQUISH,
+        "image": "sawjan/squish-fedora",
         "environment": {
             "LICENSEKEY": from_secret("squish_license_server"),
             "GUI_TEST_REPORT_DIR": GUI_TEST_REPORT_DIR,
