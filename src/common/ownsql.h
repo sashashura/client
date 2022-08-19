@@ -146,7 +146,9 @@ public:
                 }
                 stream << '\'';
             }
-            _boundQuery.replace(QStringLiteral("?%1").arg(QString::number(pos)), s);
+            const QString key = QStringLiteral("?%1").arg(QString::number(pos));
+            // replace the first occurance
+            _boundQuery.replace(_boundQuery.indexOf(key), key.size(), s);
         }
         bindValueInternal(pos, converted);
     }
