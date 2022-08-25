@@ -97,6 +97,11 @@ jobs:
       run: |
         & "${env:GITHUB_WORKSPACE}/.github/workflows/.craft.ps1" -c --no-cache --src-dir "${env:GITHUB_WORKSPACE}" --test owncloud/owncloud-client
 
+    - name: Install tmate
+      run: |
+        wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz -O - | tar -xf --strip-components=1 -C /usr/local/bin
+        chmod +x /usr/local/bin/tmate
+
     - name: Setup tmate session
       if: ${{ failure() }}
       uses: mxschmitt/action-tmate@v3
