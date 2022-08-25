@@ -82,6 +82,12 @@ jobs:
       run: |
         & "${env:GITHUB_WORKSPACE}/.github/workflows/.craft.ps1" -c --install-deps owncloud/owncloud-client
 
+    - name: Debug
+      run: |
+        mount
+        cat /etc/fstab
+        cat /proc/mounts
+
     - name: Build
       run: |
         if ("${{ matrix.target }}" -eq "windows-msvc2019_64-cl") {
